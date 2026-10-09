@@ -39,3 +39,20 @@ to 1 MiB, and unknown fields are rejected.
 Tree nodes: `{label, field, show, pos, size, verified, children}`. `verified`
 means the frame bytes at `pos..pos+size` were checked against tshark's raw
 value, so highlighting them is accurate.
+
+## Analysis (Phase 3) and findings (Phase 5)
+
+| Method & path | Purpose |
+|---|---|
+| `GET /captures/{id}/conversations?transport=tcp\|udp` | Conversations from the index: canonical endpoint pair, per-direction bytes, protocols, seg+stream for Follow |
+| `GET /captures/{id}/endpoints?limit=` | Top talkers (per-address tx/rx bytes, packets) |
+| `GET /captures/{id}/statistics?buckets=` | Totals, protocol hierarchy, size distribution, timeline, TCP stream count |
+| `GET /captures/{id}/follow?seg=&stream=` | Follow TCP stream: reassembled payload chunks per direction (hex), via tshark. Transport bytes, not decrypted content. |
+| `GET /captures/{id}/dns?limit=` | Cleartext DNS messages: client, resolver, name, type, rcode, answers |
+| `GET /captures/{id}/tls?limit=` | `{handshakes[], certificates[], note}`. Handshakes carry SNI, ALPN, negotiated version, cipher. Metadata only. |
+| `GET /captures/{id}/findings?min=` | Observed diagnostics: rule, title, severity, count, flows, example packets, reproducing filter, benign-explanation note |
+
+All are GET, authenticated, and derived from already-captured data; none change
+state or touch the network. Conversations and statistics are computed from the
+SQLite index (fast, cross-segment); follow/dns/tls/findings call tshark over the
+segment files on demand.
