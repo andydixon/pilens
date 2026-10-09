@@ -1,0 +1,48 @@
+[Unit]
+Description=PiLens network forensics appliance (web UI, capture engine)
+Documentation=file:/opt/pilens/docs/architecture.md
+After=network-online.target pilens-helper.service
+Wants=network-online.target pilens-helper.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=notify
+User=pilens
+Group=pilens
+SupplementaryGroups=wireshark
+ExecStart=/opt/pilens/bin/pilens serve -data /var/lib/pilens -listen :8443
+Restart=on-failure
+RestartSec=3
+WatchdogSec=60
+# Shutdown stops any running capture and hashes its last segment.
+TimeoutStopSec=60
+KillSignal=SIGTERM
+StateDirectory=pilens
+StateDirectoryMode=0750
+UMask=0027
+# dumpcap gains cap_net_raw/cap_net_admin from its file capabilities, which do
+# not work under NoNewPrivileges. The bounding set caps what any child can gain.
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+AmbientCapabilities=
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pilens
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=no
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

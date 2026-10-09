@@ -3,3 +3,5 @@
 /web/dist/*
 !/web/dist/.gitkeep
 *.test
+*.test
+/.testbin/

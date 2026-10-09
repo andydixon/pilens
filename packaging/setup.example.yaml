@@ -1,0 +1,44 @@
+# Non-interactive first-run configuration:
+#   sudo ./install.sh --non-interactive --config setup.yaml
+# Delete this file afterwards if it contains a plaintext password.
+
+authorised_use: true   # required: this appliance only inspects traffic you are authorised to inspect
+
+admin:
+  username: admin
+  password_file: /root/pilens-admin-password   # or: password: "at least 12 characters"
+
+network:
+  management:
+    interfaces: [eth0]
+    allowed_subnets: [192.168.1.0/24]
+    port: 8443
+  uplink: eth0
+  ap:
+    enabled: true
+    interface: wlan0
+    ssid: PiLens-Lab
+    passphrase: "change-me-please"
+    security: wpa2          # wpa2 | wpa3
+    band: bg               # bg = 2.4 GHz, a = 5 GHz
+    channel: 0             # 0 = automatic
+    hidden: false
+    country: GB
+    client_isolation: false
+  lan:
+    address: 192.168.50.1/24
+    dhcp_start: 192.168.50.100
+    dhcp_end: 192.168.50.199
+    lease_minutes: 720
+    upstream_dns: []       # empty = the Pi's own resolvers
+    reservations: []       # - {mac: "aa:bb:cc:dd:ee:ff", ip: 192.168.50.20, hostname: phone}
+    dns_overrides: []      # - {name: api.test.example, ip: 192.168.50.1}
+  forwarding:
+    mode: internet         # internet | deny
+    allow_cidrs: []
+
+storage:
+  max_bytes: 8589934592      # 8 GiB of capture files
+  reserve_bytes: 1073741824  # keep 1 GiB free
+  segment_bytes: 67108864    # 64 MiB pcapng segments
+  import_bytes: 1073741824

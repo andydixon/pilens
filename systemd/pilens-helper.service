@@ -1,0 +1,32 @@
+[Unit]
+Description=PiLens privileged network helper
+Documentation=file:/opt/pilens/docs/architecture.md
+After=pilens-firewall.service NetworkManager.service
+Wants=pilens-firewall.service
+
+[Service]
+Type=simple
+ExecStart=/opt/pilens/bin/pilens-helper -socket /run/pilens/helper.sock -user pilens
+Restart=on-failure
+RestartSec=2
+RuntimeDirectory=pilens
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=yes
+StateDirectory=pilens-helper
+StateDirectoryMode=0700
+# Sandboxing: root, but limited to what applying network configuration needs.
+ProtectSystem=strict
+ReadWritePaths=/etc/NetworkManager/system-connections /var/lib/pilens-helper /run/pilens /proc/sys/net/ipv4/ip_forward
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+LockPersonality=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

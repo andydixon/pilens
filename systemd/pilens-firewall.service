@@ -1,0 +1,16 @@
+[Unit]
+Description=PiLens firewall restore (before networking)
+Documentation=file:/opt/pilens/docs/architecture.md
+DefaultDependencies=no
+After=local-fs.target nftables.service
+Before=network-pre.target NetworkManager.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Loads only the "inet pilens" table from the last successfully applied configuration.
+ExecStart=/opt/pilens/bin/pilens-helper -boot
+
+[Install]
+WantedBy=multi-user.target

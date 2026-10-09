@@ -1,0 +1,17 @@
+[Unit]
+Description=PiLens DHCP and DNS for the access-point network
+Documentation=file:/opt/pilens/docs/architecture.md
+After=network.target pilens-helper.service
+ConditionPathExists=/var/lib/pilens-helper/dnsmasq.conf
+
+[Service]
+Type=simple
+# Bound only to the AP interface (interface=/bind-dynamic in the generated config).
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/var/lib/pilens-helper/dnsmasq.conf --pid-file
+Restart=on-failure
+RestartSec=2
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

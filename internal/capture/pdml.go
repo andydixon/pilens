@@ -12,6 +12,7 @@ import (
 type Node struct {
 	Label    string `json:"label"`
 	Field    string `json:"field,omitempty"`
+	Show     string `json:"show,omitempty"` // display value, used to build filters
 	Pos      int    `json:"pos"`
 	Size     int    `json:"size"`
 	Verified bool   `json:"verified"` // bytes at pos..pos+size are proven to belong to this field
@@ -60,7 +61,7 @@ func ParsePDML(b []byte, frame []byte) ([]Node, error) {
 
 // convert returns the node and whether any field in its subtree contradicts the frame bytes.
 func convert(p pdmlNode, frame []byte) (Node, bool) {
-	n := Node{Field: p.Name}
+	n := Node{Field: p.Name, Show: p.Show}
 	n.Label = p.Showname
 	if n.Label == "" {
 		n.Label = p.Show
