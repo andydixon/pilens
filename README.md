@@ -20,11 +20,11 @@ capture or analysis.
 |---|---|---|
 | 1 | Installer, services, auth, AP / DHCP / DNS / firewall, health | implemented |
 | 2 | dumpcap capture, pcapng storage, live analyser, filters, export / import | implemented |
-| 3 | Conversations, follow TCP stream, DNS/TLS explorers, statistics | not started |
+| 3 | Conversations, follow TCP stream, DNS/TLS explorers, statistics | implemented (HTTP explorer deferred) |
 | 4 | Optional HTTPS inspection (mitmproxy, client-trusted CA) | not started |
 | 5 | Hardening, advanced UI, benchmarks | partial |
 
-Pages for later phases are not in the UI. PiLens never shows controls that do
+HTTP Explorer (Phase 3 in the spec) is deferred with Phase 4, since useful HTTP content requires interception. Pages for later phases are not in the UI. PiLens never shows controls that do
 nothing. For what was tested and how, see [docs/testing.md](docs/testing.md).
 
 ## Quick start

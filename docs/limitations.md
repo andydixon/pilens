@@ -7,9 +7,13 @@ versions, ALPN; for TLS 1.2: certificates). The optional HTTPS inspection mode (
 CA via mitmproxy) is **not implemented** in this version, and even when it is, it will not work
 against certificate pinning, private trust stores, mutual TLS, QUIC, or apps that bypass proxies.
 
-**Not yet implemented:** conversations view, follow TCP stream, DNS/TLS/HTTP explorers,
-statistics charts, findings/diagnostics rules, capture scheduling, the strict inspection mode,
-WireGuard, packet comparison. They are not shown in the UI.
+**Not yet implemented:** HTTP explorer, findings/diagnostics rules, capture scheduling,
+the strict inspection mode, WireGuard, packet comparison. They are not shown in the UI.
+
+**TLS explorer shows metadata only.** SNI, ALPN, negotiated version and cipher, plus any
+certificate sent in the clear (TLS ≤1.2). TLS 1.3 encrypts the certificate, so the certificate
+tab is usually empty — this is expected, not a fault. "Follow TCP stream" reconstructs the
+transport payload, which for TLS is ciphertext.
 
 **IPv6** is blocked for AP clients rather than routed (see network.md).
 

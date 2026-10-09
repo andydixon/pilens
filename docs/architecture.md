@@ -167,6 +167,7 @@ dumpcap -i IF [-f BPF] -w -  ──pcapng──▶ splitter ──▶ seg-000001
 
 ## Not yet implemented (phase 3+)
 
-These pages are not in the navigation until they work: conversations / follow
-TCP stream, DNS/TLS/HTTP explorers, statistics, findings, TLS interception
-(modes B and C), and scheduling.
+Implemented since Phase 2: conversations, follow TCP stream, DNS explorer, TLS
+explorer (metadata only), statistics. Not in the navigation until they work:
+HTTP explorer and TLS interception (modes B and C, deferred together), findings,
+and capture scheduling.
