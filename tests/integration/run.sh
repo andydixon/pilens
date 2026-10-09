@@ -94,7 +94,7 @@ check "public server sees NATed source (10.99.0.2)" sh -c "ip netns exec up ss -
 refuse "client blocked from RFC1918 destination 172.16.5.5" ip netns exec cl curl -s -m 3 -o /dev/null http://172.16.5.5/
 refuse "client blocked from management/upstream subnet 10.99.0.1" ip netns exec cl curl -s -m 3 -o /dev/null http://10.99.0.1:8080/
 refuse "IPv6 from client is not forwarded" ip netns exec cl ping -6 -c 1 -W 2 fd01::1
-refuse "client blocked from Pi SSH port" ip netns exec cl bash -c 'exec 3<>/dev/tcp/192.168.50.1/22'
+refuse "client blocked from Pi SSH port" ip netns exec cl timeout 3 bash -c 'exec 3<>/dev/tcp/192.168.50.1/22'
 refuse "upstream cannot open connections into the AP subnet" ip netns exec up ping -c 1 -W 2 "$CIP"
 
 echo "== Real pilens service in the pi namespace"
