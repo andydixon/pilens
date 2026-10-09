@@ -46,5 +46,27 @@ TLS-interception hardware tests belong to phase 4.
 
 ## Results log
 
-Hardware results are recorded here only after they have actually been run. See the
-release notes or commit log for the latest run.
+Only tests that were actually run are listed.
+
+### 2026-10-09 · Raspberry Pi 5 Model B Rev 1.0 (4 GB, NVMe) · Debian 13 trixie · kernel 6.18.34+rpt-rpi-2712 · NM 1.52.1 · tshark 4.4 · PiLens 0.1.0 → 0.1.3
+
+| # | Result | Evidence / notes |
+|---|---|---|
+| H1 | **pass** | Installed over SSH via eth0. Existing connections untouched. Found a false "no AP mode" warning (check ran before `iw` was installed): fixed in 0.1.1/0.1.2. |
+| H2 | **pass** (via API, not the browser wizard) | Apply: all 9 steps ✓. AP `PiLens-Lab` on ch 11 (auto), regdomain GB. Management SSH on eth0 never interrupted. |
+| H3 | **pass** | iPhone and Apple Watch associated, leases .101 / .168 from the pool, both shown with randomised-MAC badges |
+| H4 | not run | Needs a client to try a LAN address. Netns suite covers the rule. |
+| H5 | partial | nft counter: 24 client→Pi packets dropped (mDNS etc.). No explicit SSH/8443 attempt from the phone. |
+| H6 | **pass** (tshark), desktop Wireshark not tried | 1,654 packets, 0 drops. Export (1,272 packets at the time) read by tshark 4.4. Verify = ok. Fields from decrypted QUIC Initial CRYPTO frames were correctly marked unverifiable (50/181 verified). |
+| H7 | **pass** | Reboot: `pilens-firewall` finished 18:20:33.7, NM started `pilens-ap` 18:20:38.9. All services active, forwarding on. |
+| Upgrade with a running capture | **pass after fix** | 0.1.0→0.1.1 left the session marked *failed* (systemd SIGTERMed dumpcap directly). `KillMode=mixed` in 0.1.2 means a reboot now finalises the capture as *stopped* with dumpcap's drop report. Hashes ok. |
+| H8 | not run (no hard power cut) | Covered partially by H11 |
+| H11 | **pass** | `kill -9` of pilens during a capture: restarted by systemd, no stray dumpcap, segment recovered (4,562 packets), hashed, verify ok, marked *interrupted*. The session packet counter showed 0: fixed in 0.1.3 (reindex on recovery). |
+| H12 | **pass** | Quota 64 MiB: the two unpreserved sessions were deleted oldest first (audited), the preserved session was kept, and the capture stopped with "storage limit reached … no unpreserved sessions remain". |
+| H13 | **pass** | 5 GHz ch 165 in GB: NM activation failed, rolled back in 26 s, AP back on ch 11 with DHCP active. The error message was made actionable in 0.1.3. |
+| H15 | **pass** | `setcap -r dumpcap` → `repair.sh` restored `cap_net_admin,cap_net_raw=eip`, all services ✓ |
+| H9, H10, H14, H16, H17 | not run | |
+
+The Raspberry Pi firmware throttle flags (`vcgencmd`) cannot be read by the service user on this
+OS (`/dev/vcio` is 0600 root). PiLens reports the world-readable `rpi_volt` under-voltage alarm
+instead.
