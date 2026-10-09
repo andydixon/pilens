@@ -349,7 +349,7 @@ func (e *Engine) Start(ctx context.Context, o StartOptions) (Session, error) {
 		return Session{}, err
 	}
 
-	args := []string{"-q", "-n", "-w", "-"}
+	args := []string{"-q", "-F", "pcapng", "-w", "-"}
 	for _, i := range o.Interfaces {
 		args = append(args, "-i", i)
 		if o.CaptureFilter != "" {

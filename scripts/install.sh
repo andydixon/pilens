@@ -154,7 +154,7 @@ apt-get install -y -qq --no-install-recommends tshark wireshark-common nftables 
 dpkg-reconfigure -f noninteractive wireshark-common >>"$LOG" 2>&1 || true
 
 if [ -n "$WIFI" ]; then
-  /usr/sbin/iw list 2>/dev/null | awk '/Supported interface modes/{f=1;next} f&&/^\t\t\*/{print} f&&!/^\t\t\*/{f=0}' | grep -q '\* AP$' \
+  /usr/sbin/iw list 2>/dev/null | grep -A15 'Supported interface modes' | grep -Eq '^[[:space:]]+\* AP$' \
     && echo "    Wi-Fi radio supports AP mode" || warn "Wi-Fi radio does not report AP mode support: the access point may not start"
 fi
 /usr/sbin/getcap /usr/bin/dumpcap | grep -q cap_net_raw || die "dumpcap has no capture capabilities after install (getcap /usr/bin/dumpcap)"

@@ -18,6 +18,9 @@ WatchdogSec=60
 # Shutdown stops any running capture and hashes its last segment.
 TimeoutStopSec=60
 KillSignal=SIGTERM
+# Only the main process gets SIGTERM; it stops dumpcap itself so the capture
+# is finalised as "stopped" rather than seeing dumpcap die underneath it.
+KillMode=mixed
 StateDirectory=pilens
 StateDirectoryMode=0750
 UMask=0027
