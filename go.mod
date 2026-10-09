@@ -2,6 +2,8 @@ module pilens.dev/pilens
 
 go 1.27.1
 
+toolchain go1.27.2
+
 require (
 	golang.org/x/crypto v0.57.0
 	gopkg.in/yaml.v3 v3.0.1

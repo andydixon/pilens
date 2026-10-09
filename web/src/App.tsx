@@ -13,6 +13,7 @@ import Conversations from "./pages/Conversations";
 import DnsExplorer from "./pages/DnsExplorer";
 import TlsExplorer from "./pages/TlsExplorer";
 import Statistics from "./pages/Statistics";
+import Findings from "./pages/Findings";
 import Settings from "./pages/Settings";
 
 export interface Prefs { theme: "dark" | "light" | "system"; density: "compact" | "comfortable"; scale: number; motion: "system" | "reduce" }
@@ -28,6 +29,7 @@ const NAV: [string, string, string][] = [
   ["/dns", "DNS Explorer", "◇"],
   ["/tls", "TLS Explorer", "⛨"],
   ["/statistics", "Statistics", "▦"],
+  ["/findings", "Findings", "⚑"],
   ["/library", "Capture Library", "▤"],
   ["/devices", "Devices", "⌬"],
   ["", "", ""],
@@ -97,6 +99,7 @@ export default function App() {
     if (path.startsWith("/dns")) return <DnsExplorer sessionId={path.split("/")[2] ?? ""} />;
     if (path.startsWith("/tls")) return <TlsExplorer sessionId={path.split("/")[2] ?? ""} />;
     if (path.startsWith("/statistics")) return <Statistics sessionId={path.split("/")[2] ?? ""} />;
+    if (path.startsWith("/findings")) return <Findings sessionId={path.split("/")[2] ?? ""} />;
     if (path === "/library") return <Library />;
     if (path === "/devices") return <Devices />;
     if (path === "/network") return <NetworkPage />;

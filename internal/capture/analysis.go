@@ -592,3 +592,110 @@ func cipherName(code string) string {
 	}
 	return code
 }
+
+// ---------------------------------------------------------------- findings (diagnostics)
+
+// Finding is one observed, evidence-backed diagnostic. These are facts about the
+// capture (a retransmission happened, a SERVFAIL was returned), never a claim of
+// malicious intent; the Note spells out benign explanations.
+type Finding struct {
+	Rule     string  `json:"rule"`
+	Title    string  `json:"title"`
+	Severity string  `json:"severity"` // info | low | medium
+	Count    int64   `json:"count"`
+	Flows    int     `json:"flows"`
+	Examples []int64 `json:"examples"` // packet numbers
+	Filter   string  `json:"filter"`   // display filter reproducing the evidence
+	Note     string  `json:"note"`
+}
+
+type findingRule struct {
+	rule, title, sev, filter, note string
+}
+
+var findingRules = []findingRule{
+	{"tcp.retransmission", "TCP retransmissions", "medium", "tcp.analysis.retransmission || tcp.analysis.fast_retransmission",
+		"The sender re-sent data it believed was lost. Usually packet loss or congestion on the path, not an attack. A high rate degrades throughput."},
+	{"tcp.syn_retransmission", "Connection-setup retries (SYN retransmissions)", "medium", "tcp.flags.syn==1 && tcp.flags.ack==0 && tcp.analysis.retransmission",
+		"A client retried the opening SYN, so the first attempt(s) got no reply. Indicates an unreachable or slow service, a filtered port, or loss."},
+	{"tcp.zero_window", "TCP zero window", "medium", "tcp.analysis.zero_window",
+		"A receiver advertised a full buffer, pausing the sender. Often a slow or overloaded endpoint."},
+	{"tcp.reset", "TCP resets", "low", "tcp.flags.reset==1",
+		"A connection was aborted with RST. Common and often normal (a server closing an idle socket), but a burst can indicate refused connections."},
+	{"tcp.dup_ack", "Duplicate ACKs", "low", "tcp.analysis.duplicate_ack",
+		"Repeated ACKs for the same sequence, the receiver's signal that it is missing a segment. Correlates with retransmissions and loss."},
+	{"tcp.lost_segment", "Missing segments (not captured)", "low", "tcp.analysis.lost_segment",
+		"tshark saw a gap in the TCP sequence. On an appliance this often means the capture itself dropped packets, not the network — check the capture drop counters."},
+	{"tcp.out_of_order", "Out-of-order segments", "info", "tcp.analysis.out_of_order",
+		"Segments arrived out of sequence. Normal on multipath or reordering networks."},
+	{"dns.servfail", "DNS SERVFAIL responses", "medium", "dns.flags.rcode==2",
+		"The resolver reported a server failure. Can mean DNSSEC validation failure, an upstream outage, or a misconfigured name."},
+	{"dns.nxdomain", "DNS NXDOMAIN responses", "info", "dns.flags.rcode==3 && !mdns",
+		"The name does not exist. Extremely common (typos, telemetry probing non-existent names); only an unusual volume is noteworthy."},
+	{"tls.fatal_alert", "Fatal TLS alerts", "medium", "tls.alert_message.level==2",
+		"A TLS session ended with a fatal alert (e.g. handshake_failure, bad_certificate). The connection did not establish a secure channel."},
+	{"icmp.unreachable", "ICMP destination unreachable", "low", "icmp.type==3 || icmpv6.type==1",
+		"A router or host reported a destination or port could not be reached."},
+}
+
+func (e *Engine) Findings(ctx context.Context, id string, minCount int64) ([]Finding, error) {
+	if minCount < 1 {
+		minCount = 1
+	}
+	fields := []string{"ip.src", "ipv6.src", "ip.dst", "ipv6.dst", "tcp.stream"}
+	var out []Finding
+	for _, fr := range findingRules {
+		rows, err := e.extractFields(ctx, id, fr.filter, fields, 50000)
+		if err != nil {
+			// A rule referencing a field this tshark build lacks shouldn't fail the page.
+			continue
+		}
+		if int64(len(rows)) < minCount {
+			continue
+		}
+		f := Finding{Rule: fr.rule, Title: fr.title, Severity: fr.sev, Filter: fr.filter, Note: fr.note, Count: int64(len(rows))}
+		flows := map[string]bool{}
+		for i, c := range rows {
+			if i < 12 {
+				n, _ := splitNumSeg(c[0])
+				f.Examples = append(f.Examples, n)
+			}
+			if len(c) >= 7 {
+				key := c[6] // tcp.stream when present
+				if key == "" {
+					key = firstNonEmpty(c[2], c[3]) + ">" + firstNonEmpty(c[4], c[5])
+				}
+				flows[key] = true
+			}
+		}
+		f.Flows = len(flows)
+		out = append(out, f)
+	}
+	// Capture drops are a finding of their own, read from the session record.
+	var drops string
+	e.DB.QueryRowContext(ctx, `SELECT drops FROM capture_sessions WHERE id=?`, id).Scan(&drops)
+	if total := parseDropTotal(drops); total > 0 {
+		out = append(out, Finding{Rule: "capture.drops", Title: "Packets dropped during capture", Severity: "medium", Count: total,
+			Note: "The kernel or dumpcap could not keep up and discarded packets before they were written. The capture is incomplete; analysis counts are lower bounds. Reduce load or use a capture filter.", Filter: ""})
+	}
+	return out, nil
+}
+
+// parseDropTotal sums the "dropped" figures from dumpcap's per-interface report.
+func parseDropTotal(s string) int64 {
+	var total int64
+	for _, line := range strings.Split(s, "\n") {
+		// ...received/dropped on interface 'X': 1654/3 (...)
+		if i := strings.Index(line, ": "); i >= 0 {
+			frac := strings.Fields(line[i+2:])
+			if len(frac) > 0 {
+				if parts := strings.SplitN(frac[0], "/", 2); len(parts) == 2 {
+					if d, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+						total += d
+					}
+				}
+			}
+		}
+	}
+	return total
+}

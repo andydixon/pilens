@@ -96,3 +96,5 @@ export interface FollowResult { seg: number; stream: number; chunks: StreamChunk
 export interface DNSRecord { num: number; seg: number; time: number; client: string; server: string; query: string; type: string; response: boolean; rcode: string; answers: string }
 export interface TLSRecord { num: number; seg: number; time: number; client: string; server: string; server_port: number; sni: string; version: string; cipher: string; alpn: string; stream: number | null }
 export interface CertRecord { num: number; seg: number; time: number; server: string; subject: string; issuer: string; sans: string; not_before: string; not_after: string }
+
+export interface Finding { rule: string; title: string; severity: "info" | "low" | "medium"; count: number; flows: number; examples: number[]; filter: string; note: string }

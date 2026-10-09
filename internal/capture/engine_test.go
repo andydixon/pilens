@@ -248,4 +248,14 @@ func TestAnalysisFromFixture(t *testing.T) {
 	if _, _, err := e.TLS(ctx, s.ID, 100); err != nil {
 		t.Fatalf("tls: %v", err)
 	}
+	// Findings must run without error; the fixture has a 404 and some resets.
+	fs, err := e.Findings(ctx, s.ID, 1)
+	if err != nil {
+		t.Fatalf("findings: %v", err)
+	}
+	for _, f := range fs {
+		if f.Count < 1 || f.Severity == "" || f.Title == "" {
+			t.Fatalf("malformed finding: %+v", f)
+		}
+	}
 }

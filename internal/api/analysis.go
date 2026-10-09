@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"pilens.dev/pilens/internal/capture"
 	"strconv"
 )
 
@@ -12,6 +13,7 @@ func (s *Server) analysisRoutes(priv func(string, http.HandlerFunc)) {
 	priv("GET /api/captures/{id}/follow", s.withSession(s.follow))
 	priv("GET /api/captures/{id}/dns", s.withSession(s.dns))
 	priv("GET /api/captures/{id}/tls", s.withSession(s.tls))
+	priv("GET /api/captures/{id}/findings", s.withSession(s.findings))
 }
 
 func qint(r *http.Request, k string, def int) int {
@@ -84,4 +86,16 @@ func (s *Server) tls(w http.ResponseWriter, r *http.Request, id string) {
 	}
 	writeJSON(w, map[string]any{"handshakes": handshakes, "certificates": certs,
 		"note": "Observed metadata only. In capture-only mode TLS payloads are not decrypted; interception status is 'encrypted pass-through' for every session."})
+}
+
+func (s *Server) findings(w http.ResponseWriter, r *http.Request, id string) {
+	f, err := s.Engine.Findings(r.Context(), id, int64(qint(r, "min", 1)))
+	if err != nil {
+		engineErr(w, err)
+		return
+	}
+	if f == nil {
+		f = []capture.Finding{}
+	}
+	writeJSON(w, f)
 }
