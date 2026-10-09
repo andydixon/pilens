@@ -482,23 +482,42 @@ func (e *Engine) TLS(ctx context.Context, id string, limit int) ([]TLSRecord, []
 		limit = 5000
 	}
 	// ClientHello: SNI, ALPN, offered; ServerHello: negotiated version + cipher.
-	chFields := []string{"ip.src", "ipv6.src", "ip.dst", "ipv6.dst", "tcp.dstport", "tcp.srcport", "tcp.stream", "tls.handshake.type", "tls.handshake.extensions_server_name", "tls.handshake.version", "tls.record.version", "tls.handshake.ciphersuite", "tls.handshake.extensions_alpn_str"}
+	// The true negotiated version for TLS 1.3 is in the supported_versions
+	// extension of the ServerHello; the record/handshake version stays 0x0303
+	// for middlebox compatibility, so reading only those would mislabel 1.3 as 1.2.
+	chFields := []string{"ip.src", "ipv6.src", "ip.dst", "ipv6.dst", "tcp.dstport", "udp.dstport", "tcp.srcport", "tcp.stream", "tls.handshake.type", "tls.handshake.extensions_server_name", "tls.handshake.version", "tls.record.version", "tls.handshake.ciphersuite", "tls.handshake.extensions_alpn_str", "tls.handshake.extensions.supported_version"}
+	// c offsets: 0=num,1=time, then 2+index into chFields.
+	const (
+		cType = 10
+		cSNI  = 11
+		cHV   = 12
+		cRV   = 13
+		cCS   = 14
+		cALPN = 15
+		cSV   = 16
+	)
 	rowsF, err := e.extractFields(ctx, id, "tls.handshake.type==1 || tls.handshake.type==2", chFields, limit)
 	if err != nil {
 		return nil, nil, err
 	}
+	need := 2 + len(chFields)
 	// Index ServerHello (type 2) by stream to join onto the ClientHello.
 	type sh struct{ version, cipher string }
 	byStream := map[string]sh{}
 	for _, c := range rowsF {
-		if len(c) < 2+len(chFields) || c[9] != "2" {
+		if len(c) < need || c[cType] != "2" {
 			continue
 		}
-		byStream[c[8]] = sh{version: firstNonEmpty(c[11], c[12]), cipher: c[13]}
+		// supported_version in a ServerHello may be a list; take the last (chosen).
+		sv := c[cSV]
+		if i := strings.LastIndex(sv, ","); i >= 0 {
+			sv = sv[i+1:]
+		}
+		byStream[c[9]] = sh{version: firstNonEmpty(sv, firstNonEmpty(c[cHV], c[cRV])), cipher: c[cCS]}
 	}
 	recs := []TLSRecord{}
 	for _, c := range rowsF {
-		if len(c) < 2+len(chFields) || c[9] != "1" {
+		if len(c) < need || c[cType] != "1" {
 			continue
 		}
 		r := TLSRecord{}
@@ -506,10 +525,10 @@ func (e *Engine) TLS(ctx context.Context, id string, limit int) ([]TLSRecord, []
 		r.Time, _ = strconv.ParseFloat(c[1], 64)
 		r.Client = firstNonEmpty(c[2], c[3])
 		r.Server = firstNonEmpty(c[4], c[5])
-		r.ServerPort, _ = strconv.Atoi(c[6])
-		r.SNI = c[10]
-		r.ALPN = c[14]
-		if st := c[8]; st != "" {
+		r.ServerPort, _ = strconv.Atoi(firstNonEmpty(c[6], c[7])) // tcp or udp (QUIC)
+		r.SNI = c[cSNI]
+		r.ALPN = c[cALPN]
+		if st := c[9]; st != "" {
 			if v, err := strconv.Atoi(st); err == nil {
 				r.Stream = &v
 			}
@@ -519,7 +538,12 @@ func (e *Engine) TLS(ctx context.Context, id string, limit int) ([]TLSRecord, []
 			}
 		}
 		if r.Version == "" {
-			r.Version = tlsVersion(firstNonEmpty(c[11], c[12]))
+			if c[7] != "" { // over UDP: QUIC, which mandates TLS 1.3
+				r.Version = "TLS 1.3 (QUIC)"
+			} else {
+				// No ServerHello captured: report what the client offered, not a guess.
+				r.Version = tlsVersion(firstNonEmpty(c[cHV], c[cRV])) + " (offered)"
+			}
 		}
 		recs = append(recs, r)
 	}
