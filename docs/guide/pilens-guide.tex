@@ -1,0 +1,435 @@
+\documentclass[11pt]{article}
+
+% ---- PiLens User Guide. British English. Designed to be skimmed. ----
+\usepackage[a4paper,margin=20mm,marginparwidth=22mm,marginparsep=5mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{marginnote}
+\usepackage{pifont}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
+% ---- palette (matches the appliance UI) ----
+\definecolor{ink}{HTML}{11161D}
+\definecolor{panel}{HTML}{1B222C}
+\definecolor{line}{HTML}{2A323D}
+\definecolor{amber}{HTML}{E0922F}
+\definecolor{amberlt}{HTML}{F2A93B}
+\definecolor{cyan}{HTML}{2C92A4}
+\definecolor{cyanlt}{HTML}{5CCFE0}
+\definecolor{good}{HTML}{2E9E63}
+\definecolor{bad}{HTML}{D4504E}
+\definecolor{muted}{HTML}{6A7482}
+\definecolor{paper}{HTML}{FBFBF9}
+
+\hypersetup{colorlinks=true, linkcolor=cyan, urlcolor=cyan}
+\pagecolor{white}
+\color{ink}
+
+% ---- headings ----
+\titleformat{\section}{\Large\bfseries\color{ink}}{\thesection}{0.6em}{}[{\color{line}\titlerule[1pt]}]
+\titleformat{\subsection}{\large\bfseries\color{amber}}{}{0em}{}
+\titleformat{\subsubsection}{\bfseries\color{ink}}{}{0em}{}
+\titlespacing*{\section}{0pt}{2.4ex}{1.2ex}
+\titlespacing*{\subsection}{0pt}{2ex}{0.6ex}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6ex}
+\renewcommand{\arraystretch}{1.25}
+
+% ---- callout boxes ----
+\newtcolorbox{tldr}{enhanced, colback=amberlt!10, colframe=amberlt, boxrule=0pt,
+  leftrule=3pt, arc=2pt, left=8pt, right=8pt, top=5pt, bottom=5pt, breakable,
+  fonttitle=\bfseries, title={\ding{220}\ \ TL;DR}}
+\newtcolorbox{heads}{enhanced, colback=bad!8, colframe=bad, boxrule=0pt,
+  leftrule=3pt, arc=2pt, left=8pt, right=8pt, top=5pt, bottom=5pt, breakable,
+  fonttitle=\bfseries, title={\ding{43}\ \ Heads-up}}
+\newtcolorbox{tip}{enhanced, colback=cyanlt!10, colframe=cyan, boxrule=0pt,
+  leftrule=3pt, arc=2pt, left=8pt, right=8pt, top=5pt, bottom=5pt, breakable,
+  fonttitle=\bfseries, title={\ding{42}\ \ Pro tip}}
+\newtcolorbox{truth}{enhanced, colback=ink!5, colframe=ink, boxrule=0pt,
+  leftrule=3pt, arc=2pt, left=8pt, right=8pt, top=5pt, bottom=5pt, breakable,
+  fonttitle=\bfseries, title={\ding{45}\ \ The honest truth}}
+\newtcolorbox{shotbox}{enhanced, colback=white, colframe=line, boxrule=0.6pt,
+  arc=3pt, left=3pt, right=3pt, top=3pt, bottom=3pt, drop fuzzy shadow=line}
+
+\newcommand{\screen}[2]{\begin{shotbox}\includegraphics[width=\linewidth]{fig/#1}\end{shotbox}\vspace{-0.3ex}{\small\color{muted} Figure: #2}\par\vspace{1ex}}
+\newcommand{\key}[1]{\tikz[baseline=(k.base)]{\node[fill=panel,text=white,rounded corners=2pt,inner xsep=4pt,inner ysep=1.5pt,font=\footnotesize\ttfamily](k){#1};}}
+\newcommand{\yes}{\textcolor{good}{\ding{51}}}
+\newcommand{\no}{\textcolor{bad}{\ding{55}}}
+\newcommand{\term}[1]{\textbf{#1}}
+\newcommand{\mn}[1]{\marginnote{\footnotesize\color{muted}#1}}
+
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\lhead{\footnotesize\color{muted}\textbf{PiLens} user guide}
+\rhead{\footnotesize\color{muted}\leftmark}
+\cfoot{\footnotesize\color{muted}\thepage}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+\begin{document}
+
+% ======================= COVER =======================
+\begin{titlepage}
+\color{ink}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[ink] (current page.north west) rectangle ([yshift=-95mm]current page.north east);
+  \node[anchor=north west, text=white] at ([xshift=20mm,yshift=-22mm]current page.north west)
+    {\fontsize{46}{50}\selectfont\bfseries PiLens};
+  \node[anchor=north west, text=amberlt] at ([xshift=21mm,yshift=-38mm]current page.north west)
+    {\Large network forensics for the Raspberry Pi};
+  % lens mark
+  \begin{scope}[shift={([xshift=-42mm,yshift=-42mm]current page.north east)}]
+    \draw[amberlt, line width=2.2pt] (0,0) circle (10mm);
+    \draw[amberlt, line width=3pt, line cap=round] (7mm,-7mm) -- (15mm,-15mm);
+    \draw[cyanlt, line width=1.4pt, line join=round] (-5mm,0) -- (-3mm,0) -- (-1.5mm,4mm) -- (1.5mm,-4mm) -- (3mm,0) -- (5mm,0);
+  \end{scope}
+\end{tikzpicture}
+\vspace{100mm}
+
+{\LARGE\bfseries The friendly field guide}\\[2mm]
+{\large\color{muted} Turn a Raspberry Pi into a Wi-Fi test network you can actually \emph{see} inside.}\\[10mm]
+
+\begin{tldr}
+This guide is built for skimming. Every section opens with a \textbf{TL;DR}. Boxes
+in the margins and colour-coded callouts carry the important bits. \textbf{Read the
+box, skip the prose, come back if you need it.} You will not miss anything vital
+by jumping around --- that is the point.
+\end{tldr}
+
+\vfill
+{\footnotesize\color{muted} Version 0.3 \quad\textbullet\quad AGPL-3.0-or-later \quad\textbullet\quad For inspecting devices and networks you are authorised to inspect. Nothing else.}
+\end{titlepage}
+
+% ======================= HOW TO READ =======================
+\section*{How to read this (30 seconds)}
+\addcontentsline{toc}{section}{How to read this}
+
+\begin{tabular}{@{}p{3.2cm}p{12.5cm}@{}}
+\ding{220}\ \textbf{TL;DR} & The one-line version. If you read nothing else, read these.\\
+\ding{43}\ \textbf{Heads-up} & Something that will bite you if you ignore it.\\
+\ding{42}\ \textbf{Pro tip} & A shortcut or nicety. Safe to skip.\\
+\ding{45}\ \textbf{Honest truth} & Where PiLens tells you what it \emph{cannot} do. Read these --- they save hours of confusion.\\
+\end{tabular}
+
+\vspace{1ex}
+\begin{tip}
+In a hurry? Jump straight to \textbf{\S1 The ten-minute start}, connect a phone,
+and open \textbf{Live Capture}. Come back for the rest when you are curious.
+\end{tip}
+
+{\small\color{muted}\tableofcontents}
+\newpage
+
+% ======================= 1. QUICK START =======================
+\section{The ten-minute start}
+\begin{tldr}
+Flash the SD card \textgreater\ plug in \textbf{Ethernet} \textgreater\ run one installer
+\textgreater\ open the web page \textgreater\ finish the wizard \textgreater\ connect a
+test device to the new Wi-Fi \textgreater\ watch its traffic. That is the whole dance.
+\end{tldr}
+
+\subsection{What you need}
+\begin{itemize}[leftmargin=1.4em, itemsep=1pt]
+  \item A Raspberry Pi \textbf{4 or 5} running Raspberry Pi OS Lite (64-bit).
+  \item An \textbf{Ethernet} cable to your normal network. \mn{You manage PiLens over the wire, never over its own Wi-Fi.}
+  \item The Pi's built-in Wi-Fi (this becomes the test network).
+  \item A phone or laptop you own, to be the ``device under test''.
+\end{itemize}
+
+\subsection{The steps}
+\begin{enumerate}[leftmargin=1.6em, itemsep=2pt]
+  \item Copy the release onto the Pi and run \key{sudo ./install.sh}. It explains
+    everything before it touches anything, backs up your config, and \textbf{rolls
+    back if anything fails}.
+  \item It prints three things: a \textbf{web address}, a \textbf{certificate
+    fingerprint}, and a one-time \textbf{setup token}. Keep them.
+  \item Open the web address from a computer on your wired network. Your browser
+    will warn about the certificate --- that is expected (see \S2). Check the
+    fingerprint matches, then continue.
+  \item Work through the \textbf{setup wizard}: create your login, choose the
+    management network, name the Wi-Fi, pick a password, done.
+  \item Connect your test device to the new Wi-Fi network.
+  \item Open \textbf{Live Capture}, press \textbf{Start capture} on the Wi-Fi
+    interface, and watch the packets roll in.
+\end{enumerate}
+
+\begin{heads}
+The moment you create the access point, the Pi's own Wi-Fi \emph{becomes} that
+access point. If you were connected to the Pi over Wi-Fi you will be kicked off.
+\textbf{Always manage it over Ethernet.}
+\end{heads}
+
+\screen{overview}{The Overview dashboard --- appliance status, forwarding state, clients, and a live glance at everything at once.}
+
+% ======================= 2. WHAT IT IS =======================
+\section{What PiLens is (and isn't)}
+\begin{tldr}
+PiLens is a \textbf{router with X-ray vision}. Devices on its Wi-Fi go through it
+to reach the internet, and it records every packet. It shows you \emph{metadata and
+packets} --- it does \textbf{not} decrypt HTTPS.
+\end{tldr}
+
+PiLens sits between a test device and the internet. The device joins its Wi-Fi,
+gets an address, and routes out through the Pi's Ethernet. Because \emph{every}
+packet crosses the Pi, PiLens can capture and analyse all of it --- addresses,
+ports, DNS, TLS handshakes, timing, the lot.
+
+\begin{truth}
+\textbf{Encrypted means encrypted.} HTTPS, QUIC, VPNs and encrypted DNS stay
+scrambled. PiLens shows you \emph{who} talked to \emph{whom}, \emph{when}, over
+\emph{what} --- the server name, the TLS version, the certificate when it is sent
+in the clear --- but \textbf{not the contents}. That is TLS doing its job, not
+PiLens failing. Decryption needs a separate, explicit step on each device (a
+future feature), and \textbf{a trusted certificate can never be pushed down the
+network} --- the device's owner must install it by hand. Anything that claimed
+otherwise would be lying to you.
+\end{truth}
+
+\subsection{The two padlocks}
+\begin{itemize}[leftmargin=1.4em, itemsep=1pt]
+  \item \textbf{The management padlock} is the HTTPS on the web interface. It is
+    self-signed, so your browser warns once. Check the fingerprint the installer
+    printed, trust it, move on.
+  \item \textbf{The interception padlock} (decrypting a device's HTTPS) is a
+    \emph{separate}, opt-in, per-device thing that is not part of this version.
+\end{itemize}
+
+% ======================= 3. THE SCREENS =======================
+\section{A tour of the screens}
+\begin{tldr}
+Left-hand menu, top to bottom: \textbf{Overview} (glance), \textbf{Live Capture}
+(the main event), \textbf{Conversations / DNS / TLS / Statistics / Findings}
+(ways to slice what you caught), then \textbf{Library, Devices, Network, Health,
+Settings} (housekeeping).
+\end{tldr}
+
+\subsection{Live Capture --- the main event}
+\begin{tldr}
+Three stacked panes, exactly like Wireshark: the \textbf{packet list} up top, the
+\textbf{protocol tree} in the middle, the \textbf{raw bytes} at the bottom. Click a
+packet; the other two follow.
+\end{tldr}
+
+\screen{analyser}{Live Capture. Packet list, protocol tree and a hex/ASCII inspector. The status bar along the bottom keeps you honest.}
+
+\textbf{The packet list} streams live and is colour-coded by protocol. It stays
+smooth even on a busy network because only the visible rows are drawn.
+
+\textbf{The protocol tree} shows the selected packet decoded field by field, by
+TShark (the Wireshark engine). Click a field and the matching bytes light up
+below --- but \emph{only} when PiLens can prove those bytes really are that field.
+It will never make up a highlight.
+
+\textbf{The byte pane} is a proper hex inspector: offsets, hex, ASCII, search,
+copy-as-hex or text.
+
+\begin{tip}
+The bottom status bar separates things people usually confuse: \textbf{Captured}
+(packets stored), \textbf{Ingest lag} (stored but not yet summarised),
+\textbf{UI updates dropped} (your browser fell behind --- harmless), and
+\textbf{Capture drops} (the appliance genuinely missed packets --- not harmless).
+A dropped \emph{screen update} is not a dropped \emph{packet}.
+\end{tip}
+
+\begin{heads}
+\textbf{Pause view} and \textbf{Pause capture} are different buttons. ``Pause view''
+just freezes the scrolling so you can read; capture keeps running. ``Pause
+capture'' actually stops storing packets. ``Stop'' ends the session for good.
+\end{heads}
+
+\subsection{Filters --- find the needle}
+\begin{tldr}
+Type a \textbf{Wireshark display filter} in the bar (e.g. \key{dns},
+\key{tcp.port == 443}, \key{ip.addr == 192.168.50.20}) and press Enter. It is
+evaluated by TShark, so real Wireshark syntax works.
+\end{tldr}
+
+The box turns green when the filter is valid, red when it isn't, with the reason.
+Press \key{/} anywhere to jump to it. Right-click a packet or a field to build a
+filter without typing.
+
+\subsection{Conversations \& Follow TCP Stream}
+\begin{tldr}
+\textbf{Conversations} groups traffic by endpoint pair with bytes each way. Hit
+\textbf{Follow} on a TCP row to reassemble the whole back-and-forth.
+\end{tldr}
+
+\screen{conversations}{Conversations --- who spoke to whom, how much each way, sortable, with one-click Follow and filtering.}
+
+\begin{truth}
+``Follow'' shows the \emph{transport stream} --- the bytes as they crossed the wire.
+For an HTTPS connection that is \textbf{ciphertext}, and PiLens labels it as such.
+It is honest about the difference between reassembled packets and decrypted
+content.
+\end{truth}
+
+\subsection{DNS Explorer}
+\begin{tldr}
+Every cleartext name lookup: who asked, for what, what came back, and whether it
+failed. Group by name, or filter to errors only.
+\end{tldr}
+
+\screen{dns}{DNS Explorer, grouped by name --- queries, answers, record types and result codes.}
+
+\begin{heads}
+If a device uses \textbf{encrypted DNS} (DoH/DoT), its lookups are inside TLS and
+\emph{won't} appear here --- they look like HTTPS to a resolver. PiLens never
+pretends encrypted DNS is visible.
+\end{heads}
+
+\subsection{TLS Explorer}
+\begin{tldr}
+Every TLS/QUIC handshake: server name (SNI), negotiated version, cipher, ALPN,
+and any certificate sent in the clear. Metadata only --- marked ``encrypted
+pass-through'' on every row.
+\end{tldr}
+
+\screen{tls}{TLS Explorer. Real server names and versions, honestly labelled. The certificate tab is usually empty on modern servers --- TLS 1.3 encrypts the certificate.}
+
+\begin{tip}
+The version column reports the \emph{true negotiated} version, not the
+compatibility value on the wire. QUIC shows as ``TLS 1.3 (QUIC)''. If you ever see
+everything claiming ``TLS 1.2'', that's a bug in a lesser tool --- here it's read
+from the handshake properly.
+\end{tip}
+
+\subsection{Statistics}
+\begin{tldr}
+The shape of the capture: traffic over time, protocol mix, top talkers, packet
+sizes. Toggle bytes vs packets. Every number is a real count, defined in the
+panel on the right.
+\end{tldr}
+
+\screen{statistics}{Statistics --- a traffic histogram, protocol hierarchy, top talkers and size distribution, with a definitions panel so nothing is a mystery.}
+
+\subsection{Findings}
+\begin{tldr}
+Observable hiccups --- retransmissions, resets, SERVFAILs, NXDOMAINs, dropped
+packets --- each with evidence you can click straight to.
+\end{tldr}
+
+\screen{findings}{Findings. Each card is a fact with example packets, a reproducing filter, and a note on benign causes.}
+
+\begin{truth}
+Findings is a \textbf{magnifying glass, not a smoke alarm}. A finding means a
+pattern was \emph{observed}, not that something is wrong or malicious. Each card
+spells out the innocent explanations. PiLens will never tell you ``you've been
+hacked'' from a retransmission.
+\end{truth}
+
+\subsection{The housekeeping screens}
+\begin{description}[leftmargin=0pt, style=nextline, itemsep=3pt]
+  \item[\textcolor{amber}{Capture Library}] Every saved session. Rename, tag,
+    add notes, mark \emph{preserved} (never auto-deleted), export, or check
+    integrity (SHA-256 per file + a manifest).
+  \item[\textcolor{amber}{Devices}] Who has been on the Wi-Fi. Label them, add
+    notes, jump to their packets. \mn{Randomised MACs show a badge; PiLens never pretends they identify hardware.}
+  \item[\textcolor{amber}{Network Settings}] Change the access point, DHCP, DNS,
+    forwarding and management access. Applied as one transaction with automatic
+    rollback.
+  \item[\textcolor{amber}{System Health}] CPU, memory, temperature, services,
+    storage, interfaces --- each with what was actually measured.
+  \item[\textcolor{amber}{Settings}] Theme, density, password, two-factor,
+    storage limits, colour rules, and the audit log.
+\end{description}
+
+\screen{health}{System Health --- every service reports what it actually did, not just whether a process exists.}
+
+% ======================= 4. RECIPES =======================
+\section{Common tasks, as recipes}
+\begin{tldr}
+Short how-tos for the things you'll actually do. Find the one you need, ignore
+the rest.
+\end{tldr}
+
+\subsection{``See everything one device does''}
+\begin{enumerate}[leftmargin=1.6em, itemsep=1pt]
+  \item \textbf{Devices} \textgreater\ find it \textgreater\ \textbf{Packets}. (Or
+    label it first so you recognise it.)
+  \item You land in Live Capture filtered to that device. Add \key{\&\& dns} or
+    \key{\&\& tls} to narrow further.
+\end{enumerate}
+
+\subsection{``Save this capture as evidence''}
+\begin{enumerate}[leftmargin=1.6em, itemsep=1pt]
+  \item Stop the capture. \textbf{Library} \textgreater\ the session \textgreater\
+    \textbf{Edit} \textgreater\ tick \textbf{Preserved}, add notes.
+  \item \textbf{Integrity} \textgreater\ \textbf{Verify hashes}, then \textbf{Download
+    manifest}. The original \texttt{.pcapng} opens in desktop Wireshark too.
+\end{enumerate}
+
+\subsection{``Analyse a capture from somewhere else''}
+\begin{enumerate}[leftmargin=1.6em, itemsep=1pt]
+  \item \textbf{Library} \textgreater\ \textbf{Import pcap/pcapng}. It indexes in
+    the background; the file is kept exactly as you uploaded it.
+\end{enumerate}
+
+\subsection{``Stop a device reaching the internet but still watch it''}
+\begin{enumerate}[leftmargin=1.6em, itemsep=1pt]
+  \item \textbf{Network Settings} \textgreater\ \textbf{Forwarding} \textgreater\
+    \textbf{No forwarding} \textgreater\ apply. Clients still get an address and
+    DNS, so you can see what they \emph{try} to reach.
+\end{enumerate}
+
+% ======================= 5. TROUBLE =======================
+\section{When something's off}
+\begin{tldr}
+Run \key{sudo /opt/pilens/diagnose.sh} first (it redacts secrets). Then the table.
+\end{tldr}
+
+\begin{tabular}{@{}p{5.2cm}p{10.5cm}@{}}
+\textbf{Symptom} & \textbf{Try this}\\[-0.5ex]
+\multicolumn{2}{@{}l}{\textcolor{line}{\rule{\linewidth}{0.4pt}}}\\
+Browser cert warning & Expected. Match the fingerprint, trust it.\\
+Can't log in & \key{sudo -u pilens /opt/pilens/bin/pilens reset-password -user admin}\\
+Locked out by the subnet & On the console: \key{sudo nft delete table inet pilens}, fix it in the UI, re-apply.\\
+No internet for clients & Check the Overview \textbf{Forwarding} card and your Ethernet uplink.\\
+AP won't start & Try WPA2 / 2.4\,GHz / a legal channel. Failed applies roll back by themselves.\\
+Capture shows drops & Use a capture filter; record to an SSD, not the SD card.\\
+Everything's wonky & \key{sudo /opt/pilens/repair.sh} fixes permissions and restarts services.\\
+\end{tabular}
+
+\begin{heads}
+If a network change ever strands you, every apply keeps a backup and rolls back
+on failure, and the last-good firewall is restored at boot before the Wi-Fi comes
+up. You are rarely more than a reboot from a working appliance.
+\end{heads}
+
+% ======================= 6. CHEAT SHEET =======================
+\section{Keyboard cheat sheet}
+\begin{center}
+\begin{tabular}{@{}ll@{\hspace{10mm}}ll@{}}
+\key{/} & focus the filter & \key{Space} & pause / resume the view\\
+\key{$\uparrow$}\,\key{$\downarrow$} & move through packets & \key{f} & follow newest packet\\
+\key{PgUp}\,\key{PgDn} & jump a page & \key{Shift+F} & focus mode (hide chrome)\\
+\key{$\leftarrow$}\,\key{$\rightarrow$} & collapse / expand tree & \key{Alt+1..7} & jump between pages\\
+\key{Home}\,\key{End} & first / last packet & right-click & build a filter\\
+\end{tabular}
+\end{center}
+
+\vspace{2ex}
+\begin{truth}
+\textbf{The one rule that matters:} only point PiLens at devices and networks you
+own or are explicitly allowed to inspect. It has no hidden, covert or
+impersonation features, on purpose. Captured traffic can hold passwords and
+private messages --- treat your captures like the sensitive data they are, and
+delete what you don't need. Access and exports are logged.
+\end{truth}
+
+\vfill
+\begin{center}\small\color{muted}
+PiLens --- built to be fast, honest, and genuinely useful.\\
+Full docs live in the repository's \texttt{docs/} folder.
+\end{center}
+
+\end{document}

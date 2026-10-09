@@ -70,6 +70,7 @@ make test-docker        # tshark/dumpcap tests + network-namespace integration s
 - [Benchmarks](docs/benchmarks.md)
 - [Testing and hardware acceptance checklist](docs/testing.md)
 - [Known limitations](docs/limitations.md)
+- [Illustrated user guide (PDF)](docs/guide/pilens-guide.pdf)
 
 ## Licence
 
