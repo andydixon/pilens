@@ -83,9 +83,7 @@ echo "    (a wired network is not trusted just because it is wired; narrow this 
 
 # ---------------------------------------------------------------- 3-5. capabilities, resources, conflicts
 say "Checking Wi-Fi, resources and conflicts"
-if command -v iw >/dev/null && [ -n "$WIFI" ]; then
-  iw list 2>/dev/null | awk '/Supported interface modes/{f=1;next} f&&/^\t\t\*/{print} f&&!/^\t\t\*/{f=0}' | grep -q '\* AP$' && echo "    AP mode supported" || warn "Wi-Fi radio does not report AP mode support"
-elif [ -z "$WIFI" ]; then warn "no Wi-Fi interface found; the access point cannot be configured"; fi
+[ -z "$WIFI" ] && warn "no Wi-Fi interface found; the access point cannot be configured"
 FREE_MB=$(df -Pm / | awk 'NR==2{print $4}'); MEM_MB=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)
 echo "    free disk ${FREE_MB} MiB, memory ${MEM_MB} MiB"
 [ "$FREE_MB" -ge 1024 ] || die "at least 1 GiB free disk space is required"
@@ -154,7 +152,12 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq >>"$LOG" 2>&1 || warn "apt-get update failed; trying with cached package lists"
 apt-get install -y -qq --no-install-recommends tshark wireshark-common nftables dnsmasq-base iw ca-certificates >>"$LOG" 2>&1 || die "apt-get install failed (see $LOG)"
 dpkg-reconfigure -f noninteractive wireshark-common >>"$LOG" 2>&1 || true
-getcap /usr/bin/dumpcap | grep -q cap_net_raw || die "dumpcap has no capture capabilities after install (getcap /usr/bin/dumpcap)"
+
+if [ -n "$WIFI" ]; then
+  /usr/sbin/iw list 2>/dev/null | awk '/Supported interface modes/{f=1;next} f&&/^\t\t\*/{print} f&&!/^\t\t\*/{f=0}' | grep -q '\* AP$' \
+    && echo "    Wi-Fi radio supports AP mode" || warn "Wi-Fi radio does not report AP mode support: the access point may not start"
+fi
+/usr/sbin/getcap /usr/bin/dumpcap | grep -q cap_net_raw || die "dumpcap has no capture capabilities after install (getcap /usr/bin/dumpcap)"
 # dnsmasq-base must not bring a competing system dnsmasq service.
 systemctl is-enabled --quiet dnsmasq 2>/dev/null && warn "dnsmasq.service (full package) is enabled. Disable it, or make sure it does not listen on the AP interface."
 

@@ -92,6 +92,7 @@ func DnsmasqConf(n config.Network) string {
 	w("# Managed by PiLens. Changes are overwritten; use the PiLens UI.")
 	w("interface=%s", n.AP.Interface)
 	w("bind-dynamic") // only the AP interface; survives the address appearing late
+	w("except-interface=lo") // dnsmasq otherwise adds loopback implicitly
 	w("no-hosts")
 	w("domain-needed")
 	w("bogus-priv")

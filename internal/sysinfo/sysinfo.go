@@ -231,6 +231,21 @@ func ReadHealth(paths map[string]string) Health {
 			}
 		}
 	}
+	if h.Throttled == "" {
+		// vcgencmd needs /dev/vcio (root only on recent Pi OS). The rpi_volt hwmon
+		// under-voltage alarm is world-readable, so report that instead.
+		h.Throttled = "vcgencmd unavailable to the service user"
+		if m, _ := filepath.Glob("/sys/class/hwmon/hwmon*"); len(m) > 0 {
+			for _, d := range m {
+				if readTrim(d+"/name") == "rpi_volt" {
+					h.Throttled = "under-voltage alarm (rpi_volt): " + readTrim(d+"/in0_lcrit_alarm")
+					if readTrim(d+"/in0_lcrit_alarm") == "1" {
+						h.ThrottleBits = append(h.ThrottleBits, "under-voltage detected now")
+					}
+				}
+			}
+		}
+	}
 	h.Load = readTrim("/proc/loadavg")
 	up := strings.Fields(readTrim("/proc/uptime"))
 	if len(up) > 0 {
