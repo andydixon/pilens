@@ -23,7 +23,7 @@ export default function Overview() {
   }), []);
 
   const fwd = h?.forwarding;
-  const live = h?.capture?.session as Session | undefined;
+  const live = h?.capture?.running ? (h.capture.session as Session) : undefined;
   const assoc = clients?.clients.filter((c) => c.associated) ?? [];
   const alerts: [string, "warn" | "bad"][] = [];
   if (herr) alerts.push(["Health endpoint unavailable: " + herr, "bad"]);
@@ -48,7 +48,7 @@ export default function Overview() {
       <div className="grid g4" style={{ marginBottom: ".9rem" }}>
         <div className="card"><h3>Capture</h3>
           <div className="metric">{live ? live.packets.toLocaleString() : "idle"}{live && <small>packets</small>}</div>
-          <div className="row" style={{ marginTop: ".4rem" }}>{live ? <Badge kind={live.paused ? "warn" : "live"}>{live.paused ? "paused" : "capturing"} on {live.interfaces.join(", ")}</Badge> : <Badge>not capturing</Badge>}</div>
+          <div className="row" style={{ marginTop: ".4rem" }}>{live ? <Badge kind={live.paused ? "warn" : "live"}>{live.paused ? "paused" : "capturing"} on {(live.interfaces ?? []).join(", ")}</Badge> : <Badge>not capturing</Badge>}</div>
         </div>
         <div className="card"><h3>Traffic rate</h3>
           <div className="metric">{rate ? Math.round(rate.pps).toLocaleString() : "–"}<small>pkt/s</small></div>

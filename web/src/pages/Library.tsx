@@ -47,7 +47,7 @@ export default function Library() {
                 <td className="mono">{s.ended_at ? ((s.ended_at - s.started_at) / 1000).toFixed(0) + " s" : "–"}</td>
                 <td className="mono">{s.packets.toLocaleString()}</td>
                 <td className="mono">{fmtBytes(s.bytes)}</td>
-                <td className="mono">{s.kind === "import" ? "import" : s.interfaces.join(",")}{s.capture_filter && <div className="hint" title="capture filter">{s.capture_filter}</div>}</td>
+                <td className="mono">{s.kind === "import" ? "import" : (s.interfaces ?? []).join(",")}{s.capture_filter && <div className="hint" title="capture filter">{s.capture_filter}</div>}</td>
                 <td><div className="row" style={{ flexWrap: "nowrap" }}>
                   <button className="small" onClick={async () => setInfo({ s, segs: (await api(`/api/captures/${s.id}`)).segments ?? [] })}>Integrity</button>
                   <a className="btn small" href={`/api/captures/${s.id}/export`} download>Export</a>

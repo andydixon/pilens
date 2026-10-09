@@ -187,8 +187,7 @@ func (e *Engine) Statistics(ctx context.Context, id string, buckets int) (Stats,
 	if buckets <= 0 || buckets > 2000 {
 		buckets = 300
 	}
-	var s Stats
-	s.Counters = map[string]int64{}
+	s := Stats{Counters: map[string]int64{}, Protocols: []NameCount{}, SizeBuckets: []NameCount{}, Timeline: []TimeBucket{}}
 	err := e.DB.QueryRowContext(ctx, `SELECT COUNT(*), COALESCE(SUM(len),0), COALESCE(MIN(ts),0), COALESCE(MAX(ts),0) FROM packets WHERE session_id=?`, id).
 		Scan(&s.Packets, &s.Bytes, &s.Start, &s.End)
 	if err != nil || s.Packets == 0 {
@@ -552,7 +551,7 @@ func (e *Engine) TLS(ctx context.Context, id string, limit int) ([]TLSRecord, []
 	certFields := []string{"ip.src", "ipv6.src", "x509if.printableString", "x509sat.uTF8String", "x509ce.dNSName", "x509af.notBefore", "x509af.notAfter"}
 	certRows, err := e.extractFields(ctx, id, "tls.handshake.type==11", certFields, limit)
 	if err != nil {
-		return recs, nil, nil // handshake records are still useful
+		return recs, []CertRecord{}, nil // handshake records are still useful
 	}
 	certs := []CertRecord{}
 	for _, c := range certRows {

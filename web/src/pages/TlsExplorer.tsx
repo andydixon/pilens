@@ -26,8 +26,8 @@ export default function TlsExplorer({ sessionId }: { sessionId: string }) {
       {Object.keys(verCount).length > 0 && <div className="row" style={{ marginBottom: ".8rem" }}>{Object.entries(verCount).map(([v, n]) => <Badge key={v} kind="plain">{v}: {n}</Badge>)}</div>}
       <div className="row" style={{ marginBottom: ".8rem" }}>
         <div className="row" style={{ gap: ".25rem" }}>
-          <button className={tab === "handshakes" ? "on" : ""} onClick={() => setTab("handshakes")}>Handshakes ({data?.handshakes.length ?? 0})</button>
-          <button className={tab === "certs" ? "on" : ""} onClick={() => setTab("certs")}>Certificates ({data?.certificates.length ?? 0})</button>
+          <button className={tab === "handshakes" ? "on" : ""} onClick={() => setTab("handshakes")}>Handshakes ({data?.handshakes?.length ?? 0})</button>
+          <button className={tab === "certs" ? "on" : ""} onClick={() => setTab("certs")}>Certificates ({data?.certificates?.length ?? 0})</button>
         </div>
         <input placeholder="Filter SNI / server / subject" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>

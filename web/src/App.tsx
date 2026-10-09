@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, setCSRF, connectEvents, disconnectEvents } from "./api";
 import { useHash, usePersist, Toaster, go } from "./ui";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Login from "./pages/Login";
 import Setup from "./pages/Setup";
 import Overview from "./pages/Overview";
@@ -121,7 +122,7 @@ export default function App() {
           <span className="row spread"><span>v{sess.version}</span><button className="small ghost" onClick={async () => { await api("/api/auth/logout", { method: "POST" }).catch(() => {}); setSess(null); disconnectEvents(); }}>Sign out</button></span>
         </div>
       </aside>
-      <main className="main">{page}</main>
+      <main className="main"><ErrorBoundary where={path}>{page}</ErrorBoundary></main>
       <Toaster />
     </div>
   );
