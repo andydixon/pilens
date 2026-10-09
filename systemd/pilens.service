@@ -15,6 +15,7 @@ ExecStart=/opt/pilens/bin/pilens serve -data /var/lib/pilens -listen :8443
 Restart=on-failure
 RestartSec=3
 WatchdogSec=60
+MemoryAccounting=yes
 # Shutdown stops any running capture and hashes its last segment.
 TimeoutStopSec=60
 KillSignal=SIGTERM
