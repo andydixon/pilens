@@ -84,3 +84,15 @@ export const fmtDur = (s: number) => {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = Math.floor(s % 60);
   return h ? `${h}h ${m}m` : m ? `${m}m ${x}s` : `${x}s`;
 };
+
+// ---- Phase 3 analysis types ----
+export interface Conversation { transport: string; a_addr: string; a_port: number; b_addr: string; b_port: number; packets: number; bytes: number; bytes_a_to_b: number; bytes_b_to_a: number; start: number; end: number; protocols: string; seg: number; stream: number | null; first_num: number }
+export interface Endpoint { addr: string; packets: number; bytes: number; tx_bytes: number; rx_bytes: number; start: number; end: number }
+export interface NameCount { name: string; packets: number; bytes: number }
+export interface TimeBucket { t: number; packets: number; bytes: number }
+export interface Stats { packets: number; bytes: number; start: number; end: number; protocols: NameCount[]; size_buckets: NameCount[]; timeline: TimeBucket[]; tcp_streams: number; counters: Record<string, number> }
+export interface StreamChunk { dir: string; hex: string; bytes: number }
+export interface FollowResult { seg: number; stream: number; chunks: StreamChunk[]; a_to_b: number; b_to_a: number; note?: string; endpoint?: string }
+export interface DNSRecord { num: number; seg: number; time: number; client: string; server: string; query: string; type: string; response: boolean; rcode: string; answers: string }
+export interface TLSRecord { num: number; seg: number; time: number; client: string; server: string; server_port: number; sni: string; version: string; cipher: string; alpn: string; stream: number | null }
+export interface CertRecord { num: number; seg: number; time: number; server: string; subject: string; issuer: string; sans: string; not_before: string; not_after: string }

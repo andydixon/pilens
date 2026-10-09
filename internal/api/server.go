@@ -81,6 +81,7 @@ func (s *Server) Handler() http.Handler {
 
 	s.networkRoutes(priv)
 	s.captureRoutes(priv)
+	s.analysisRoutes(priv)
 
 	if s.Web != nil {
 		files := http.FileServerFS(s.Web)

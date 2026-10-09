@@ -9,6 +9,10 @@ import Library from "./pages/Library";
 import NetworkPage from "./pages/Network";
 import Devices from "./pages/Devices";
 import Health from "./pages/Health";
+import Conversations from "./pages/Conversations";
+import DnsExplorer from "./pages/DnsExplorer";
+import TlsExplorer from "./pages/TlsExplorer";
+import Statistics from "./pages/Statistics";
 import Settings from "./pages/Settings";
 
 export interface Prefs { theme: "dark" | "light" | "system"; density: "compact" | "comfortable"; scale: number; motion: "system" | "reduce" }
@@ -20,6 +24,10 @@ interface Sess { user: string; csrf: string; totp_enabled: boolean; setup_comple
 const NAV: [string, string, string][] = [
   ["/", "Overview", "◉"],
   ["/analyse", "Live Capture", "≋"],
+  ["/conversations", "Conversations", "⇌"],
+  ["/dns", "DNS Explorer", "◇"],
+  ["/tls", "TLS Explorer", "⛨"],
+  ["/statistics", "Statistics", "▦"],
   ["/library", "Capture Library", "▤"],
   ["/devices", "Devices", "⌬"],
   ["", "", ""],
@@ -85,6 +93,10 @@ export default function App() {
   const page = (() => {
     if (path === "/" ) return <Overview />;
     if (path.startsWith("/analyse")) return <Analyser sessionId={path.split("/")[2] ?? ""} initialFilter={query.get("filter") ?? ""} focus={focus} setFocus={setFocus} />;
+    if (path.startsWith("/conversations")) return <Conversations sessionId={path.split("/")[2] ?? ""} />;
+    if (path.startsWith("/dns")) return <DnsExplorer sessionId={path.split("/")[2] ?? ""} />;
+    if (path.startsWith("/tls")) return <TlsExplorer sessionId={path.split("/")[2] ?? ""} />;
+    if (path.startsWith("/statistics")) return <Statistics sessionId={path.split("/")[2] ?? ""} />;
     if (path === "/library") return <Library />;
     if (path === "/devices") return <Devices />;
     if (path === "/network") return <NetworkPage />;

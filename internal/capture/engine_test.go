@@ -3,6 +3,7 @@ package capture
 import (
 	"bytes"
 	"context"
+	hexpkg "encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -194,5 +195,57 @@ func TestLiveCaptureRotation(t *testing.T) {
 	}
 	if got == 0 && sub.Dropped.Load() == 0 {
 		t.Fatal("no live packet events")
+	}
+}
+
+func TestAnalysisFromFixture(t *testing.T) {
+	e := newEngine(t)
+	ctx := context.Background()
+	f, _ := os.Open(fixture)
+	defer f.Close()
+	s, err := e.Import(ctx, "fixture", f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100 && func() bool { x, _ := e.Get(s.ID); return x.State == "importing" }(); i++ {
+		time.Sleep(50 * time.Millisecond)
+	}
+	conv, err := e.Conversations(ctx, s.ID, "tcp")
+	if err != nil || len(conv) == 0 {
+		t.Fatalf("tcp conversations: %v %d", err, len(conv))
+	}
+	c := conv[0]
+	if c.Packets == 0 || c.Bytes == 0 || c.Stream == nil || (c.BytesAtoB+c.BytesBtoA) != c.Bytes {
+		t.Fatalf("conversation sums wrong: %+v", c)
+	}
+	// Follow the first TCP stream and check both directions carry payload.
+	fr, err := e.FollowTCP(ctx, s.ID, c.Seg, *c.Stream)
+	if err != nil || fr.AtoB == 0 || fr.BtoA == 0 {
+		t.Fatalf("follow: %v %+v", err, fr)
+	}
+	// The HTTP request bytes must appear in the client->server direction.
+	var ab string
+	for _, ch := range fr.Chunks {
+		if ch.Dir == "ab" {
+			ab += ch.Hex
+		}
+	}
+	raw, _ := hexpkg.DecodeString(ab)
+	if !strings.Contains(string(raw), "GET /") {
+		t.Fatalf("stream payload missing HTTP request")
+	}
+	st, err := e.Statistics(ctx, s.ID, 50)
+	if err != nil || st.Packets == 0 || len(st.Protocols) == 0 || len(st.Timeline) == 0 || st.TCPStreams == 0 {
+		t.Fatalf("stats: %v %+v", err, st)
+	}
+	eps, _ := e.Endpoints(ctx, s.ID, 10)
+	if len(eps) == 0 || eps[0].Bytes == 0 {
+		t.Fatalf("endpoints: %+v", eps)
+	}
+	if _, err := e.DNS(ctx, s.ID, 100); err != nil { // fixture uses mDNS; real DNS checked on hardware
+		t.Fatalf("dns: %v", err)
+	}
+	if _, _, err := e.TLS(ctx, s.ID, 100); err != nil {
+		t.Fatalf("tls: %v", err)
 	}
 }
