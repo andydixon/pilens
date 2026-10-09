@@ -55,7 +55,7 @@ func (e *Engine) Packets(ctx context.Context, id, filter string, offset, limit i
 	if offset < 0 {
 		offset = 0
 	}
-	p := Page{Offset: offset}
+	p := Page{Offset: offset, Rows: []Row{}}
 	if strings.TrimSpace(filter) == "" {
 		var first, last sql.NullInt64
 		e.DB.QueryRow(`SELECT MIN(num),MAX(num) FROM packets WHERE session_id=?`, id).Scan(&first, &last)
@@ -98,6 +98,7 @@ func (e *Engine) Packets(ctx context.Context, id, filter string, offset, limit i
 	for _, n := range p.Nums {
 		want[n] = true
 	}
+	p.Rows = []Row{}
 	for _, r := range all {
 		if want[r.Num] {
 			p.Rows = append(p.Rows, r)
