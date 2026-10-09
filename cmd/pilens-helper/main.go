@@ -309,7 +309,7 @@ func activate(ctx context.Context, n config.Network, files map[string][]byte, st
 	}
 	if n.AP.Enabled {
 		if _, err := run(ctx, 60*time.Second, "nmcli", "--wait", "45", "connection", "up", netgen.ConnName); err != nil {
-			return err
+			return fmt.Errorf("the access point did not start. Likely causes: the band/channel is not permitted for country %s or not supported by this radio, or the radio does not support %s in AP mode (%w)", n.AP.Country, strings.ToUpper(n.AP.Security), err)
 		}
 		step("access point %q activated", n.AP.SSID)
 		if _, err := run(ctx, 30*time.Second, "systemctl", "restart", "pilens-dnsmasq.service"); err != nil {

@@ -130,7 +130,9 @@ func serve(args []string) error {
 	lim := capture.DefaultLimits()
 	db.GetJSON("capture_limits", &lim)
 	eng.SetLimits(lim)
-	recoverSessions(db, *caps)
+	for _, id := range recoverSessions(db, *caps) {
+		go eng.Reindex(id)
+	}
 
 	cert, fp, err := ensureCert(*data)
 	if err != nil {
@@ -178,7 +180,8 @@ func serve(args []string) error {
 }
 
 // recoverSessions finalises sessions left running by a crash or power loss.
-func recoverSessions(db *store.Store, dir string) {
+// It returns the IDs of the sessions it marked interrupted.
+func recoverSessions(db *store.Store, dir string) (ids []string) {
 	rows, err := db.Query(`SELECT s.id, g.seq, g.file, g.format FROM segments g JOIN capture_sessions s ON s.id=g.session_id WHERE g.complete=0 AND g.deleted=0`)
 	if err == nil {
 		type seg struct {
@@ -216,7 +219,16 @@ func recoverSessions(db *store.Store, dir string) {
 			slog.Warn("recovered interrupted segment", "session", s.id, "segment", s.seq, "packets", n, "truncated_tail", scanErr != nil)
 		}
 	}
+	if r, err := db.Query(`SELECT id FROM capture_sessions WHERE state IN ('running','importing')`); err == nil {
+		for r.Next() {
+			var id string
+			r.Scan(&id)
+			ids = append(ids, id)
+		}
+		r.Close()
+	}
 	db.Exec(`UPDATE capture_sessions SET state='failed', error='interrupted: the service stopped unexpectedly (power loss or crash); segments were finalised on restart and summaries may be incomplete', ended_at=? WHERE state IN ('running','importing')`, time.Now().UnixMilli())
+	return ids
 }
 
 func sdNotify(state string) {

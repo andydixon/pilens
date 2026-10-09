@@ -502,3 +502,59 @@ func (e *Engine) indexImport(id, path, format string) {
 	data, _ := json.Marshal(map[string]string{"session": id})
 	e.Hub.Publish(Event{Type: "resync", Data: data})
 }
+
+// Reindex fills in summary rows missing for complete segments (after a crash or
+// power loss the index can lag behind what reached the capture file).
+func (e *Engine) Reindex(id string) error {
+	segs, err := e.Segments(id)
+	if err != nil {
+		return err
+	}
+	var total int64
+	for _, s := range segs {
+		if s.Deleted || !s.Complete {
+			continue
+		}
+		total += s.Count
+		var have int64
+		e.DB.QueryRow(`SELECT COUNT(*) FROM packets WHERE session_id=? AND num>=? AND num<?`, id, s.Base, s.Base+s.Count).Scan(&have)
+		if have >= s.Count {
+			continue
+		}
+		path := filepath.Join(e.sessionDir(id), s.File)
+		var offs []int64
+		pcapfile.Scan(path, s.Format, func(_ int, off int64, _ []byte) error { offs = append(offs, off); return nil }) // truncated tail tolerated
+		ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+		cmd := e.Tools.Command(ctx, 3600, e.Tools.SummaryArgs(path)...)
+		out, err := cmd.StdoutPipe()
+		if err == nil {
+			err = cmd.Start()
+		}
+		if err != nil {
+			cancel()
+			return err
+		}
+		var batch []Row
+		flush := func() {
+			if tx, err := e.DB.Begin(); err == nil {
+				insertRows(tx, id, batch)
+				tx.Commit()
+			}
+			batch = batch[:0]
+		}
+		ReadSummaries(out, func(r Row) {
+			if r.Num < 1 || r.Num > int64(len(offs)) {
+				return
+			}
+			r.Off, r.Seg, r.Num = offs[r.Num-1], s.Seq, s.Base+r.Num-1
+			if batch = append(batch, r); len(batch) >= 2000 {
+				flush()
+			}
+		})
+		flush()
+		cmd.Wait()
+		cancel()
+	}
+	e.DB.Exec(`UPDATE capture_sessions SET packets=? WHERE id=? AND packets<?`, total, id, total)
+	return nil
+}
