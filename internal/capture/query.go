@@ -39,13 +39,13 @@ func scanRows(rows *sql.Rows) ([]Row, error) {
 // Page is a window of packet rows. Position i in the (filtered) list is
 // Offset+i; rows may be missing where summaries are still being generated.
 type Page struct {
-	Total    int64  `json:"total"`
-	First    int64  `json:"first"` // packet number at position 0 (unfiltered views)
-	Offset   int64  `json:"offset"`
-	Rows     []Row  `json:"rows"`
+	Total    int64   `json:"total"`
+	First    int64   `json:"first"` // packet number at position 0 (unfiltered views)
+	Offset   int64   `json:"offset"`
+	Rows     []Row   `json:"rows"`
 	Nums     []int64 `json:"nums,omitempty"` // packet numbers for each position (filtered views)
-	Filtered bool   `json:"filtered"`
-	Partial  bool   `json:"partial"` // filter results cover only part of the capture
+	Filtered bool    `json:"filtered"`
+	Partial  bool    `json:"partial"` // filter results cover only part of the capture
 }
 
 func (e *Engine) Packets(ctx context.Context, id, filter string, offset, limit int64) (Page, error) {

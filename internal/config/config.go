@@ -70,8 +70,8 @@ type Forwarding struct {
 func DefaultNetwork() Network {
 	return Network{
 		Management: Management{Port: 8443},
-		AP: AP{Enabled: true, SSID: "PiLens-Lab", Security: "wpa2", Band: "bg", Channel: 0, Country: "GB"},
-		LAN: LAN{Address: "192.168.50.1/24", DHCPStart: "192.168.50.100", DHCPEnd: "192.168.50.199", LeaseMinutes: 720},
+		AP:         AP{Enabled: true, SSID: "PiLens-Lab", Security: "wpa2", Band: "bg", Channel: 0, Country: "GB"},
+		LAN:        LAN{Address: "192.168.50.1/24", DHCPStart: "192.168.50.100", DHCPEnd: "192.168.50.199", LeaseMinutes: 720},
 		Forwarding: Forwarding{Mode: "internet"},
 	}
 }

@@ -32,10 +32,10 @@ import (
 )
 
 type Limits struct {
-	MaxBytes     int64 `json:"max_bytes"`     // total bytes of capture files
-	ReserveBytes int64 `json:"reserve_bytes"` // free space that must remain on the filesystem
-	SegmentBytes int64 `json:"segment_bytes"` // rotate segment files at this size
-	ImportBytes  int64 `json:"import_bytes"`  // largest accepted upload
+	MaxBytes     int64 `json:"max_bytes" yaml:"max_bytes"`         // total bytes of capture files
+	ReserveBytes int64 `json:"reserve_bytes" yaml:"reserve_bytes"` // free space that must remain on the filesystem
+	SegmentBytes int64 `json:"segment_bytes" yaml:"segment_bytes"` // rotate segment files at this size
+	ImportBytes  int64 `json:"import_bytes" yaml:"import_bytes"`   // largest accepted upload
 }
 
 func DefaultLimits() Limits {
@@ -59,8 +59,8 @@ type Engine struct {
 	fcache map[string]*filterEntry
 }
 
-func (e *Engine) Limits() Limits      { e.limMu.Lock(); defer e.limMu.Unlock(); return e.limits }
-func (e *Engine) SetLimits(l Limits)  { e.limMu.Lock(); e.limits = l; e.limMu.Unlock() }
+func (e *Engine) Limits() Limits     { e.limMu.Lock(); defer e.limMu.Unlock(); return e.limits }
+func (e *Engine) SetLimits(l Limits) { e.limMu.Lock(); e.limits = l; e.limMu.Unlock() }
 
 // Session is the API view of a capture session.
 type Session struct {
@@ -273,11 +273,11 @@ func clockSynced() string {
 func (e *Engine) meta(extra map[string]any) string {
 	host, _ := os.Hostname()
 	m := map[string]any{
-		"pilens_version":    e.Version,
-		"tshark_version":    e.Tools.Version(),
+		"pilens_version":     e.Version,
+		"tshark_version":     e.Tools.Version(),
 		"clock_synchronised": clockSynced(),
-		"hostname":          host,
-		"recorded_utc":      time.Now().UTC().Format(time.RFC3339Nano),
+		"hostname":           host,
+		"recorded_utc":       time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	for k, v := range extra {
 		m[k] = v
@@ -760,11 +760,11 @@ func freeBytes(dir string) int64 {
 }
 
 type StorageInfo struct {
-	Used      int64  `json:"used"`
-	Free      int64  `json:"free"`
-	Limits    Limits `json:"limits"`
-	Dir       string `json:"dir"`
-	LowWarning bool  `json:"low_warning"`
+	Used       int64  `json:"used"`
+	Free       int64  `json:"free"`
+	Limits     Limits `json:"limits"`
+	Dir        string `json:"dir"`
+	LowWarning bool   `json:"low_warning"`
 }
 
 func (e *Engine) Storage() StorageInfo {

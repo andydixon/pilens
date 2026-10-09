@@ -52,12 +52,12 @@ type Status struct {
 }
 
 type Station struct {
-	MAC         string `json:"mac"`
-	SignalDBm   *int   `json:"signal_dbm,omitempty"`
-	RxBytes     uint64 `json:"rx_bytes"`
-	TxBytes     uint64 `json:"tx_bytes"`
-	ConnectedS  int64  `json:"connected_s"`
-	InactiveMS  int64  `json:"inactive_ms"`
+	MAC        string `json:"mac"`
+	SignalDBm  *int   `json:"signal_dbm,omitempty"`
+	RxBytes    uint64 `json:"rx_bytes"`
+	TxBytes    uint64 `json:"tx_bytes"`
+	ConnectedS int64  `json:"connected_s"`
+	InactiveMS int64  `json:"inactive_ms"`
 }
 
 type Lease struct {
