@@ -65,7 +65,10 @@ Only tests that were actually run are listed.
 | H12 | **pass** | Quota 64 MiB: the two unpreserved sessions were deleted oldest first (audited), the preserved session was kept, and the capture stopped with "storage limit reached … no unpreserved sessions remain". |
 | H13 | **pass** | 5 GHz ch 165 in GB: NM activation failed, rolled back in 26 s, AP back on ch 11 with DHCP active. The error message was made actionable in 0.1.3. |
 | H15 | **pass** | `setcap -r dumpcap` → `repair.sh` restored `cap_net_admin,cap_net_raw=eip`, all services ✓ |
-| H9, H10, H14, H16, H17 | not run | |
+| H16 | **partial** | Loopback worst-case: 108 MB/s / 4,000 pkt/s with 14.7% drops honestly reported. Real Wi-Fi iperf3 not run. See [benchmarks.md](benchmarks.md). |
+| H17 | **pass** | 263 MB import indexed in 3.2 s (~3,200 pkt/s); filters ~1.2 s; UI responsive. |
+| Findings | **pass** | On the iPhone capture: 18 retransmissions/7 flows, 1 SYN retry, 7 resets, 17 dup-ACKs, 3 NXDOMAIN, 1 ICMP unreachable — each linking to evidence packets. |
+| H9, H10, H14 | not run | Need physical cable/client actions. |
 
 The Raspberry Pi firmware throttle flags (`vcgencmd`) cannot be read by the service user on this
 OS (`/dev/vcio` is 0600 root). PiLens reports the world-readable `rpi_volt` under-voltage alarm
