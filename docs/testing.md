@@ -67,6 +67,7 @@ Only tests that were actually run are listed.
 | H15 | **pass** | `setcap -r dumpcap` → `repair.sh` restored `cap_net_admin,cap_net_raw=eip`, all services ✓ |
 | H16 | **partial** | Loopback worst-case: 108 MB/s / 4,000 pkt/s with 14.7% drops honestly reported. Real Wi-Fi iperf3 not run. See [benchmarks.md](benchmarks.md). |
 | H17 | **pass** | 263 MB import indexed in 3.2 s (~3,200 pkt/s); filters ~1.2 s; UI responsive. |
+| Interception (Mode B) | **pass** | On the Pi 5: CA generated + downloaded (public only, 0 key lines). Toggle on → proxy active on 8081, nft redirect + `ct status dnat` accept present. A CA-trusting client (curl `--cacert`) decrypted https://example.com and api.github.com (TLS 1.3); an untrusting client was refused and logged as a TLS failure. HTTP Explorer showed all three. Toggle off → redirect removed, proxy stopped, masquerade intact. Full device trust (phone) is the operator's manual step. |
 | Findings | **pass** | On the iPhone capture: 18 retransmissions/7 flows, 1 SYN retry, 7 resets, 17 dup-ACKs, 3 NXDOMAIN, 1 ICMP unreachable — each linking to evidence packets. |
 | H9, H10, H14 | not run | Need physical cable/client actions. |
 

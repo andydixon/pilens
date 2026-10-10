@@ -167,7 +167,19 @@ dumpcap -i IF [-f BPF] -w -  ──pcapng──▶ splitter ──▶ seg-000001
 
 ## Not yet implemented (phase 3+)
 
-Implemented since Phase 2: conversations, follow TCP stream, DNS explorer, TLS
-explorer (metadata only), statistics. Not in the navigation until they work:
-HTTP explorer and TLS interception (modes B and C, deferred together), findings,
-and capture scheduling.
+Implemented: conversations, follow TCP stream, DNS/TLS explorers, statistics,
+findings, and Mode B HTTPS interception (CA + mitmdump + HTTP explorer). Not yet
+built: Mode C strict fail-closed policy, and capture scheduling.
+
+## Interception (Mode B)
+
+`pilens-proxy.service` runs `mitmdump` (in `/opt/pilens/proxy-venv`) as the
+unprivileged `pilens` user, in transparent mode. An in-app RSA CA
+(`internal/proxy`) is written to the mitmproxy confdir; the public cert is
+downloadable, the key never is. When the operator toggles interception on, the
+core writes `proxy.env`, then the root helper re-renders the nft table with a
+`prerouting` redirect (`iifname <ap> tcp dport {80,443} redirect`) plus an
+`input` rule accepting only `ct status dnat` connections, and starts the service.
+A mitmdump addon writes each transaction as NDJSON; the core tails it into SQLite
+and the HTTP Explorer. Toggling off removes the redirect and stops the service.
+Interception is off by default and the appliance is pure capture-only until enabled.

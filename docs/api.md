@@ -56,3 +56,19 @@ All are GET, authenticated, and derived from already-captured data; none change
 state or touch the network. Conversations and statistics are computed from the
 SQLite index (fast, cross-segment); follow/dns/tls/findings call tshark over the
 segment files on demand.
+
+## Interception (Phase 4, Mode B)
+
+| Method & path | Purpose |
+|---|---|
+| `GET /interception` | `{config, ca, running, port, note}` |
+| `PUT /interception {enabled, capture_bodies, max_body_kb, exclude_hosts[]}` | Toggle/configure; applies firewall redirect + proxy via helper |
+| `GET /interception/ca.crt` | Download the CA **public** certificate (never the key) |
+| `POST /interception/ca/rotate` | Regenerate the CA (only while disabled) |
+| `POST /interception/clear` | Delete all intercepted HTTP flows + retained bodies |
+| `GET /http?q=&client=&limit=` | Decrypted HTTP transactions, newest first |
+| `GET /http/{id}` | One transaction (headers, timing, TLS, flags) |
+| `GET /http/{id}/body/{req\|resp}` | Stored body as an opaque download (nosniff, sandbox CSP); only if body capture was on |
+
+Interception is off by default. Live transactions also arrive on `/events` as
+`http` events.

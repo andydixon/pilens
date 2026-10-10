@@ -28,12 +28,17 @@ sensitive system.
   and `systemctl` with fixed argv; and nothing else. There is no generic
   command execution.
 - **pilens-dnsmasq**: Debian's dnsmasq, which drops privileges itself.
+- **pilens-proxy** (Mode B, optional): `mitmdump` as the unprivileged `pilens`
+  user, sandboxed (`ProtectSystem=strict`, `NoNewPrivileges`). Started/stopped by
+  the helper on toggle. The interception CA key is 0600 and never downloadable;
+  only the root helper adds the firewall redirect.
 
 ## Secrets
 
 | Secret | Where | Exposure |
 |---|---|---|
 | Admin password | Argon2id hash in SQLite (0640 pilens) | Never returned |
+| Interception CA key | `proxy/ca/mitmproxy-ca.pem` (0600 pilens) | Never downloadable; only the public cert is served. Separate from the management CA. |
 | Session tokens | Only the SHA-256 is stored | Cookie only |
 | Wi-Fi passphrase | SQLite + helper state (0600 root) + NM keyfile (0600 root) | Write-only in the API. Never in a process argv. Redacted in diagnostics. |
 | Setup token | `/var/lib/pilens/setup-token` (0600) | Deleted when the first admin is created |
@@ -41,7 +46,9 @@ sensitive system.
 
 ## Data protection
 
-- PiLens currently stores no decrypted payloads, because it decrypts nothing.
+- With interception **off** (the default) PiLens decrypts nothing and stores no
+  payloads. With it on, HTTP metadata is stored; bodies are retained only when the
+  operator explicitly opts in, size-limited, and clearable, with views audited.
 - Captures are deleted by retention (oldest unpreserved first) or explicitly
   by an admin, who must confirm. Deleting a session removes its files and all
   index rows.

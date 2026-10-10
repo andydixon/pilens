@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-10-10 (Phase 4: authorised HTTPS inspection, Mode B)
+- Toggleable transparent HTTPS interception via mitmdump in a venv. Off by default.
+- Own RSA-2048 CA generated in-app (`PiLens Interception CA`), downloadable public
+  cert with per-OS install guide + fingerprint; private key never leaves the box.
+- nftables redirect accepts only dnat'd connections (never an open proxy); the
+  proxy's own upstream never loops.
+- HTTP Explorer: transactions with headers and opt-in body viewers (JSON/text/hex/
+  image, sandboxed). Bodies off by default. Pinned/untrusting = reported errors.
+- Verified on the Pi 5: a CA-trusting client's HTTPS decrypted (TLS 1.3), an
+  untrusting client honestly reported as a TLS failure.
+
 All notable changes. Dates are when the work was done on the reference Pi 5.
 
 ## 0.3.1 — 2026-10-09

@@ -12,14 +12,35 @@ single most common misunderstanding about a tool like this.
    unrelated to anything captured. The installer prints its SHA-256 fingerprint;
    verify it the first time your browser warns about it.
 
-2. **Interception CA** — a separate authority that *would* let PiLens decrypt a
-   test device's HTTPS, by having that device explicitly trust it. **This is not
-   implemented in this version** (Phase 4). When it is, it will be opt-in,
-   per-device, and require you to install and trust the CA on the client
-   yourself. There is no way to do it silently.
+2. **Interception CA** — a separate authority that lets PiLens decrypt a test
+   device's HTTPS, *after* that device's owner explicitly installs and trusts it.
+   Generated in-app (RSA-2048, `PiLens Interception CA`), downloadable from the
+   Certificates page (public cert only — the key never leaves the appliance).
+   Interception is a toggle, **off by default**. There is no way to make a device
+   trust it silently or over the network.
 
 The two are kept independent on purpose: compromising or distributing an
 interception CA must never affect the management channel.
+
+## Mode B: authorised interception (optional, off by default)
+
+Turn it on from **Certificates & HTTPS Inspection**. PiLens then transparently
+redirects AP clients' TCP 80/443 to a local mitmdump, which presents certificates
+signed by the appliance CA. A device that has installed and trusts that CA sees a
+valid chain, so its HTTPS is decrypted and the transactions appear in the **HTTP
+Explorer**. A device that has *not* installed it sees an untrusted certificate and
+its connections fail — which is why interception is useless (and harmless) until
+you do the manual install step on each device you own.
+
+- Redirect is `iifname <ap>` only, TCP 80/443. The proxy accepts only
+  connections the redirect created (`ct status dnat`), so it is never an open
+  proxy for clients.
+- **Excluded hosts** (pinned apps, privacy-sensitive sites) are passed straight
+  through, still encrypted.
+- **Bodies are not retained by default.** Enable it per-investigation; the data
+  is on the appliance disk until cleared, and views/exports are audited.
+- Pinned apps, private trust stores, mutual TLS and QUIC cannot be intercepted
+  and are reported as such — never bypassed, never downgraded.
 
 ## Why HTTPS content is unavailable without client trust
 

@@ -3,12 +3,14 @@
 **Encryption.** PiLens captures packets; it does not decrypt them. HTTPS, QUIC/HTTP-3, TLS 1.3 with
 Encrypted ClientHello, DNS-over-HTTPS/TLS, and VPN traffic are visible only as encrypted
 packets plus whatever metadata the protocol exposes in clear (for TLS ≤1.3 without ECH: SNI,
-versions, ALPN; for TLS 1.2: certificates). The optional HTTPS inspection mode (client-installed
-CA via mitmproxy) is **not implemented** in this version, and even when it is, it will not work
-against certificate pinning, private trust stores, mutual TLS, QUIC, or apps that bypass proxies.
+versions, ALPN; for TLS 1.2: certificates). The optional HTTPS inspection mode (Mode B) **is** available: enable it on the Certificates page,
+install the appliance CA on each authorised test device, and decrypted transactions appear in the
+HTTP Explorer. It does **not** work against certificate pinning, private trust stores, mutual TLS,
+QUIC/HTTP-3, or apps that bypass the proxy — these are reported honestly as not intercepted, never
+bypassed. It is off by default; while off, PiLens is pure capture-only.
 
-**Not yet implemented:** HTTP explorer, findings/diagnostics rules, capture scheduling,
-the strict inspection mode, WireGuard, packet comparison. They are not shown in the UI.
+**Not yet implemented:** the strict inspection mode (Mode C fail-closed policy), capture scheduling,
+WireGuard, packet comparison. They are not shown in the UI.
 
 **TLS explorer shows metadata only.** SNI, ALPN, negotiated version and cipher, plus any
 certificate sent in the clear (TLS ≤1.2). TLS 1.3 encrypts the certificate, so the certificate

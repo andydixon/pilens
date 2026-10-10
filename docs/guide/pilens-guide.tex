@@ -189,8 +189,7 @@ ports, DNS, TLS handshakes, timing, the lot.
 scrambled. PiLens shows you \emph{who} talked to \emph{whom}, \emph{when}, over
 \emph{what} --- the server name, the TLS version, the certificate when it is sent
 in the clear --- but \textbf{not the contents}. That is TLS doing its job, not
-PiLens failing. Decryption needs a separate, explicit step on each device (a
-future feature), and \textbf{a trusted certificate can never be pushed down the
+PiLens failing. Decryption needs a separate, explicit step on each device (Mode B, \S3.9), and \textbf{a trusted certificate can never be pushed down the
 network} --- the device's owner must install it by hand. Anything that claimed
 otherwise would be lying to you.
 \end{truth}
@@ -201,7 +200,8 @@ otherwise would be lying to you.
     self-signed, so your browser warns once. Check the fingerprint the installer
     printed, trust it, move on.
   \item \textbf{The interception padlock} (decrypting a device's HTTPS) is a
-    \emph{separate}, opt-in, per-device thing that is not part of this version.
+    \emph{separate}, opt-in, per-device thing: a toggle on the Certificates page.
+    See \S3.9.
 \end{itemize}
 
 % ======================= 3. THE SCREENS =======================
@@ -327,6 +327,43 @@ spells out the innocent explanations. PiLens will never tell you ``you've been
 hacked'' from a retransmission.
 \end{truth}
 
+\subsection{HTTPS inspection (Mode B) --- the opt-in one}
+\begin{tldr}
+A toggle on \textbf{Certificates}. Download the appliance's CA, install and trust
+it on a device you own, flip the switch, and that device's HTTPS shows up decrypted
+in the \textbf{HTTP Explorer}. Off by default.
+\end{tldr}
+
+\screen{certificates}{Certificates \& HTTPS Inspection --- the toggle, the CA to download, per-device install steps, and the privacy options.}
+
+\begin{truth}
+This is the only part that can see inside HTTPS, and it only works \emph{with
+consent}: you must install the CA on each device by hand and turn trust on. It
+\textbf{cannot} be pushed over the network or via DHCP. Pinned apps, QUIC and
+private trust stores still can't be read --- they show up as honest errors, never
+silently bypassed. The CA's private key never leaves the Pi and is not
+downloadable.
+\end{truth}
+
+\textbf{To use it:} Certificates \textgreater\ \emph{Download CA certificate}
+\textgreater\ install it on your test device (the page has per-OS steps; iOS needs
+the extra ``Certificate Trust Settings'' toggle) \textgreater\ verify the
+fingerprint matches \textgreater\ flip \emph{Interception} on.
+
+\begin{heads}
+Turning interception on while a device has \emph{not} installed the CA will break
+that device's HTTPS (it correctly refuses the unknown certificate). Install first,
+toggle second --- and toggle it back off when you're done.
+\end{heads}
+
+\begin{tip}
+\textbf{Bodies are off by default.} The Explorer shows headers, status and timing
+for everything; request/response bodies are only stored if you opt in on the
+Certificates page, for a named investigation. Clear them when done.
+\end{tip}
+
+\screen{http}{HTTP Explorer --- decrypted transactions from trusting devices, with headers and (opt-in) body viewers.}
+
 \subsection{The housekeeping screens}
 \begin{description}[leftmargin=0pt, style=nextline, itemsep=3pt]
   \item[\textcolor{amber}{Capture Library}] Every saved session. Rename, tag,
@@ -334,6 +371,8 @@ hacked'' from a retransmission.
     integrity (SHA-256 per file + a manifest).
   \item[\textcolor{amber}{Devices}] Who has been on the Wi-Fi. Label them, add
     notes, jump to their packets. \mn{Randomised MACs show a badge; PiLens never pretends they identify hardware.}
+  \item[\textcolor{amber}{Certificates}] The HTTPS-inspection toggle, CA
+    download and device install guide (\S3.9).
   \item[\textcolor{amber}{Network Settings}] Change the access point, DHCP, DNS,
     forwarding and management access. Applied as one transaction with automatic
     rollback.
