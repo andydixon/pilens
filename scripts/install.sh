@@ -169,13 +169,32 @@ usermod -aG wireshark pilens
 systemctl stop pilens 2>/dev/null || true
 mkdir -p "$PREFIX"
 install -m 0755 "$SRC/bin/pilens" "$SRC/bin/pilens-helper" -D -t "$PREFIX/bin"
+install -m 0755 "$SRC/proxy-run.sh" "$PREFIX/proxy-run.sh"
+install -m 0644 "$SRC/mitm_addon.py" "$PREFIX/mitm_addon.py"
 for f in install.sh uninstall.sh repair.sh diagnose.sh setup.example.yaml VERSION README.md LICENSE; do install -m 0644 "$SRC/$f" "$PREFIX/$f"; done
 chmod 0755 "$PREFIX"/*.sh
 rm -rf "$PREFIX/docs"; cp -r "$SRC/docs" "$PREFIX/docs"
 install -d -o pilens -g pilens -m 0750 "$DATA"
+install -d -o pilens -g pilens -m 0750 "$DATA/proxy"
 install -d -o root -g root -m 0700 /var/lib/pilens-helper
 install -m 0644 "$SRC"/systemd/*.service /etc/systemd/system/
 systemctl daemon-reload
+
+# ---------------------------------------------------------------- 16. optional TLS proxy deps
+say "Preparing optional HTTPS-interception proxy (mitmproxy)"
+VENV="$PREFIX/proxy-venv"
+if [ -x "$VENV/bin/mitmdump" ]; then
+  echo "    mitmproxy venv already present"
+elif apt-get install -y -qq --no-install-recommends python3-venv >>"$LOG" 2>&1 && python3 -m venv "$VENV" >>"$LOG" 2>&1; then
+  if "$VENV/bin/pip" install --quiet --only-binary=:all: --upgrade pip >>"$LOG" 2>&1 &&      "$VENV/bin/pip" install --quiet --only-binary=:all: mitmproxy >>"$LOG" 2>&1; then
+    chown -R pilens:pilens "$VENV"
+    echo "    mitmproxy installed ($("$VENV/bin/mitmdump" --version 2>/dev/null | head -1))"
+  else
+    warn "mitmproxy install failed (needs internet + arm64 wheels). HTTPS interception will be unavailable until you run: sudo $PREFIX/repair.sh"
+  fi
+else
+  warn "could not create the proxy virtualenv; HTTPS interception will be unavailable (optional feature)"
+fi
 
 # ---------------------------------------------------------------- 15. initialise data
 say "Initialising database and management certificate"

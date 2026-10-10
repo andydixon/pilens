@@ -36,6 +36,7 @@ import (
 	"pilens.dev/pilens/internal/config"
 	"pilens.dev/pilens/internal/helper"
 	"pilens.dev/pilens/internal/pcapfile"
+	"pilens.dev/pilens/internal/proxy"
 	"pilens.dev/pilens/internal/store"
 	"pilens.dev/pilens/web"
 )
@@ -134,13 +135,20 @@ func serve(args []string) error {
 		go eng.Reindex(id)
 	}
 
+	host, _ := os.Hostname()
+	sink := proxySink{eng.Hub}
+	px := proxy.New(db, filepath.Join(*data, "proxy"), host, sink)
+	if err := px.EnsureCA(); err != nil {
+		slog.Warn("interception CA init deferred", "err", err)
+	}
+
 	cert, fp, err := ensureCert(*data)
 	if err != nil {
 		return err
 	}
 	slog.Info("management certificate", "sha256", fp)
 	srv := &api.Server{DB: db, Engine: eng, Helper: helper.Client{Socket: *sock}, Version: Version, Web: web.FS(),
-		SetupTokenPath: filepath.Join(*data, "setup-token"), DataDir: *data}
+		SetupTokenPath: filepath.Join(*data, "setup-token"), DataDir: *data, Proxy: px}
 	hs := &http.Server{
 		Addr:              *listen,
 		Handler:           srv.Handler(),
@@ -162,6 +170,7 @@ func serve(args []string) error {
 		}
 	}()
 	sdNotify("READY=1")
+	px.Start(ctx)
 	go watchdog(ctx, db)
 	slog.Info("pilens serving", "listen", *listen, "version", Version)
 	<-ctx.Done()
@@ -229,6 +238,12 @@ func recoverSessions(db *store.Store, dir string) (ids []string) {
 	}
 	db.Exec(`UPDATE capture_sessions SET state='failed', error='interrupted: the service stopped unexpectedly (power loss or crash); segments were finalised on restart and summaries may be incomplete', ended_at=? WHERE state IN ('running','importing')`, time.Now().UnixMilli())
 	return ids
+}
+
+type proxySink struct{ h *capture.Hub }
+
+func (s proxySink) Publish(eventType string, data []byte) {
+	s.h.Publish(capture.Event{Type: eventType, Data: data})
 }
 
 func sdNotify(state string) {

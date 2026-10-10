@@ -15,6 +15,8 @@ import DnsExplorer from "./pages/DnsExplorer";
 import TlsExplorer from "./pages/TlsExplorer";
 import Statistics from "./pages/Statistics";
 import Findings from "./pages/Findings";
+import HttpExplorer from "./pages/HttpExplorer";
+import Certificates from "./pages/Certificates";
 import Settings from "./pages/Settings";
 
 export interface Prefs { theme: "dark" | "light" | "system"; density: "compact" | "comfortable"; scale: number; motion: "system" | "reduce" }
@@ -29,12 +31,14 @@ const NAV: [string, string, string][] = [
   ["/conversations", "Conversations", "⇌"],
   ["/dns", "DNS Explorer", "◇"],
   ["/tls", "TLS Explorer", "⛨"],
+  ["/http", "HTTP Explorer", "⇅"],
   ["/statistics", "Statistics", "▦"],
   ["/findings", "Findings", "⚑"],
   ["/library", "Capture Library", "▤"],
   ["/devices", "Devices", "⌬"],
   ["", "", ""],
   ["/network", "Network Settings", "⇄"],
+  ["/certificates", "Certificates", "⛉"],
   ["/health", "System Health", "♥"],
   ["/settings", "Settings", "⚙"],
 ];
@@ -101,6 +105,8 @@ export default function App() {
     if (path.startsWith("/tls")) return <TlsExplorer sessionId={path.split("/")[2] ?? ""} />;
     if (path.startsWith("/statistics")) return <Statistics sessionId={path.split("/")[2] ?? ""} />;
     if (path.startsWith("/findings")) return <Findings sessionId={path.split("/")[2] ?? ""} />;
+    if (path.startsWith("/http")) return <HttpExplorer />;
+    if (path === "/certificates") return <Certificates />;
     if (path === "/library") return <Library />;
     if (path === "/devices") return <Devices />;
     if (path === "/network") return <NetworkPage />;

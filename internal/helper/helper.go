@@ -16,8 +16,10 @@ import (
 const DefaultSocket = "/run/pilens/helper.sock"
 
 type Request struct {
-	Op      string          `json:"op"`
-	Network *config.Network `json:"network,omitempty"`
+	Op               string          `json:"op"`
+	Network          *config.Network `json:"network,omitempty"`
+	InterceptEnabled bool            `json:"intercept_enabled,omitempty"`
+	InterceptPort    int             `json:"intercept_port,omitempty"`
 }
 
 type Response struct {
@@ -32,6 +34,7 @@ const (
 	OpStatus       = "status"
 	OpStations     = "stations"
 	OpLeases       = "leases"
+	OpSetInterception = "set_interception"
 )
 
 type ApplyResult struct {

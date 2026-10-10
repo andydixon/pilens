@@ -129,11 +129,19 @@ func DnsmasqConf(n config.Network) string {
 
 func q(s string) string { return `"` + s + `"` } // inputs are validated interface names
 
+// Intercept describes transparent HTTPS-interception redirection. Port 0 / nil
+// means interception is off and no redirect rules are emitted.
+type Intercept struct {
+	Enabled bool
+	Port    int
+}
+
 // Nftables renders the complete inet pilens table. The output begins by
 // (re)creating and deleting the table so `nft -f` replaces it atomically while
-// leaving every other table untouched.
-func Nftables(n config.Network) string {
+// leaving every other table untouched. ic may be nil (interception off).
+func Nftables(n config.Network, ic *Intercept) string {
 	ap, up := q(n.AP.Interface), q(n.Uplink)
+	intercept := ic != nil && ic.Enabled && ic.Port > 0
 	sub := n.LAN.Subnet().String()
 	var mgmtIf []string
 	for _, i := range n.Management.Interfaces {
@@ -186,6 +194,12 @@ func Nftables(n config.Network) string {
 	w("\t\tip daddr %s udp dport 53 accept", n.LAN.Gateway())
 	w("\t\tip daddr %s tcp dport 53 accept", n.LAN.Gateway())
 	w("\t\ticmp type { echo-request, destination-unreachable, time-exceeded } accept")
+	if intercept {
+		// Accept ONLY connections the prerouting redirect created (ct status dnat).
+		// A client connecting directly to the proxy port is not dnat'd, so this
+		// never turns the proxy into an open proxy reachable by clients.
+		w("\t\ttcp dport %d ct status dnat accept comment \"redirected to interception proxy\"", ic.Port)
+	}
 	w("\t\tcounter drop comment \"AP clients cannot reach the appliance\"")
 	w("\t}")
 
@@ -211,6 +225,17 @@ func Nftables(n config.Network) string {
 	w("\tchain ap_return {")
 	w("\t\tiifname %s ct state established,related accept", up)
 	w("\t\tcounter drop")
+	w("\t}")
+
+	// Transparent interception: redirect AP-client HTTP(S) to the local proxy.
+	// Only when enabled, and only new connections from the AP interface. The
+	// proxy's own upstream connections originate on the Pi (not iifname ap), so
+	// they are never redirected — no loop.
+	w("\tchain prerouting {")
+	w("\t\ttype nat hook prerouting priority dstnat; policy accept;")
+	if intercept {
+		w("\t\tiifname %s meta l4proto tcp tcp dport { 80, 443 } redirect to :%d", ap, ic.Port)
+	}
 	w("\t}")
 
 	w("\tchain postrouting {")

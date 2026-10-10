@@ -142,6 +142,12 @@ func (s *server) handle(ctx context.Context, c *net.UnixConn) {
 		data = s.status(ctx)
 	case helper.OpStations:
 		data, err = stations(ctx)
+	case helper.OpSetInterception:
+		r := s.setInterception(ctx, req.InterceptEnabled, req.InterceptPort)
+		data = r
+		if r.Error != "" {
+			err = errors.New(r.Error)
+		}
 	case helper.OpLeases:
 		b, rerr := os.ReadFile(netgen.LeaseFile)
 		if rerr != nil && !os.IsNotExist(rerr) {
@@ -232,7 +238,7 @@ func (s *server) apply(ctx context.Context, n config.Network) helper.ApplyResult
 		return r
 	}
 	step("validated configuration")
-	ruleset := netgen.Nftables(n)
+	ruleset := netgen.Nftables(n, loadIntercept())
 	tmp := statePath("ruleset.check.nft")
 	if err := writeAtomic(tmp, []byte(ruleset), 0o600); err != nil {
 		r.Error = err.Error()
@@ -441,6 +447,98 @@ func stations(ctx context.Context) ([]helper.Station, error) {
 	return helper.ParseStationDump(out), nil
 }
 
+// --- interception state (persisted so apply_network and boot keep the redirect) ---
+
+type interceptState struct {
+	Enabled bool `json:"enabled"`
+	Port    int  `json:"port"`
+}
+
+func interceptPath() string { return statePath("intercept.json") }
+
+func loadIntercept() *netgen.Intercept {
+	b, err := os.ReadFile(interceptPath())
+	if err != nil {
+		return nil
+	}
+	var st interceptState
+	if json.Unmarshal(b, &st) != nil || !st.Enabled {
+		return nil
+	}
+	return &netgen.Intercept{Enabled: true, Port: st.Port}
+}
+
+// setInterception toggles transparent interception: re-renders the firewall with
+// (or without) the redirect, then starts/stops the proxy service. The CA and the
+// proxy's configuration are owned by the core; the helper only wires the network
+// and the service.
+func (s *server) setInterception(ctx context.Context, enabled bool, port int) helper.ApplyResult {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var r helper.ApplyResult
+	step := func(f string, a ...any) { r.Steps = append(r.Steps, fmt.Sprintf(f, a...)) }
+	if port <= 0 || port > 65535 {
+		r.Error = "invalid proxy port"
+		return r
+	}
+	b, err := os.ReadFile(statePath("last-good.json"))
+	if err != nil {
+		r.Error = "apply a network configuration before enabling interception"
+		return r
+	}
+	var n config.Network
+	if err := json.Unmarshal(b, &n); err != nil {
+		r.Error = "stored network configuration unreadable"
+		return r
+	}
+	ic := (*netgen.Intercept)(nil)
+	if enabled {
+		ic = &netgen.Intercept{Enabled: true, Port: port}
+	}
+	ruleset := netgen.Nftables(n, ic)
+	tmp := statePath("ruleset.check.nft")
+	writeAtomic(tmp, []byte(ruleset), 0o600)
+	if _, err := run(ctx, 20*time.Second, "nft", "-c", "-f", tmp); err != nil {
+		r.Error = "firewall ruleset rejected: " + err.Error()
+		return r
+	}
+	// Persist state first so a concurrent apply_network renders consistently.
+	stB, _ := json.Marshal(interceptState{Enabled: enabled, Port: port})
+	writeAtomic(interceptPath(), stB, 0o600)
+	writeAtomic(statePath("ruleset.nft"), []byte(ruleset), 0o600)
+	if _, err := run(ctx, 20*time.Second, "nft", "-f", statePath("ruleset.nft")); err != nil {
+		r.Error = "loading firewall failed: " + err.Error()
+		return r
+	}
+	step("firewall updated (%s)", map[bool]string{true: "redirecting HTTP/HTTPS to the proxy", false: "redirect removed"}[enabled])
+	if enabled {
+		if _, err := run(ctx, 30*time.Second, "systemctl", "restart", "pilens-proxy.service"); err != nil {
+			writeAtomic(interceptPath(), mustJSON(interceptState{Enabled: false, Port: port}), 0o600)
+			writeAtomic(statePath("ruleset.nft"), []byte(netgen.Nftables(n, nil)), 0o600)
+			run(ctx, 20*time.Second, "nft", "-f", statePath("ruleset.nft"))
+			r.Error = "proxy failed to start, interception reverted: " + err.Error()
+			r.RolledBack = true
+			return r
+		}
+		deadline := time.Now().Add(15 * time.Second)
+		for !unitActive(ctx, "pilens-proxy.service") {
+			if time.Now().After(deadline) {
+				r.Error = "proxy did not become active"
+				return r
+			}
+			time.Sleep(time.Second)
+		}
+		step("interception proxy active on port %d", port)
+	} else {
+		run(ctx, 20*time.Second, "systemctl", "stop", "pilens-proxy.service")
+		step("interception proxy stopped")
+	}
+	r.Applied = true
+	return r
+}
+
+func mustJSON(v any) []byte { b, _ := json.Marshal(v); return b }
+
 // bootLoad restores the last good ruleset (or a fail-closed one) before networking starts.
 func bootLoad() error {
 	ctx := context.Background()
@@ -462,6 +560,10 @@ func bootLoad() error {
 			run(ctx, 10*time.Second, "iw", "reg", "set", n.AP.Country)
 		}
 	}
+	if ic := loadIntercept(); ic != nil {
+		run(ctx, 30*time.Second, "systemctl", "start", "pilens-proxy.service")
+		slog.Info("interception proxy started at boot")
+	}
 	slog.Info("firewall restored at boot")
 	return nil
 }
@@ -481,6 +583,6 @@ func renderCmd(path string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	fmt.Printf("### nftables\n%s\n### dnsmasq.conf\n%s\n### %s (psk redacted)\n%s", netgen.Nftables(n), netgen.DnsmasqConf(n), keyfilePath, netgen.NMKeyfile(n.Redacted()))
+	fmt.Printf("### nftables\n%s\n### dnsmasq.conf\n%s\n### %s (psk redacted)\n%s", netgen.Nftables(n, loadIntercept()), netgen.DnsmasqConf(n), keyfilePath, netgen.NMKeyfile(n.Redacted()))
 	return 0
 }

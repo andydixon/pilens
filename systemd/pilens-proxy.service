@@ -1,0 +1,26 @@
+[Unit]
+Description=PiLens HTTPS interception proxy (mitmdump, authorised Mode B)
+Documentation=file:/opt/pilens/docs/tls-and-encryption.md
+After=network-online.target pilens.service
+Wants=network-online.target
+PartOf=pilens.service
+ConditionPathExists=/var/lib/pilens/proxy/proxy.env
+
+[Service]
+Type=simple
+User=pilens
+Group=pilens
+# Transparent mode reads SO_ORIGINAL_DST on redirected sockets; no extra privilege.
+ExecStart=/opt/pilens/proxy-run.sh
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pilens/proxy
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+# started/stopped by the network helper when interception is toggled

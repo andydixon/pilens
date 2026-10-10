@@ -11,7 +11,7 @@ run() { local f="$D/$1"; shift; { echo "\$ $*"; "$@"; } >"$f" 2>&1 || true; }
 redact() { sed -E 's/("passphrase"[[:space:]]*:[[:space:]]*")[^"]*/\1REDACTED/g; s/^(psk=).*/\1REDACTED/; s/(setup_token=).*/\1REDACTED/'; }
 
 run versions.txt sh -c 'cat /opt/pilens/VERSION; uname -a; cat /etc/os-release; tr -d "\0" </proc/device-tree/model; echo; tshark --version | head -1; nmcli --version; dnsmasq --version | head -1; nft --version'
-run services.txt systemctl status --no-pager pilens pilens-helper pilens-firewall pilens-dnsmasq NetworkManager
+run services.txt systemctl status --no-pager pilens pilens-helper pilens-firewall pilens-dnsmasq pilens-proxy NetworkManager
 run journal.txt journalctl --no-pager -n 3000 -u pilens -u pilens-helper -u pilens-firewall -u pilens-dnsmasq
 run journal-nm.txt journalctl --no-pager -n 800 -u NetworkManager
 run nft-pilens.txt nft list table inet pilens
@@ -20,6 +20,7 @@ run ip.txt sh -c 'ip -br link; ip addr; ip route; ip -6 route; sysctl net.ipv4.i
 run nm.txt sh -c 'nmcli general; nmcli device; nmcli connection show'
 run nm-pilens-ap.txt nmcli connection show pilens-ap
 run wifi.txt sh -c 'iw dev; iw reg get; iw list'
+run interception.txt sh -c 'ls -la /var/lib/pilens/proxy 2>/dev/null; echo; [ -f /var/lib/pilens/proxy/ca/mitmproxy-ca-cert.pem ] && openssl x509 -in /var/lib/pilens/proxy/ca/mitmproxy-ca-cert.pem -noout -subject -fingerprint -sha256 -dates; /opt/pilens/proxy-venv/bin/mitmdump --version 2>/dev/null | head -1'
 run capture.txt sh -c 'getcap /usr/bin/dumpcap; id pilens; ls -la /var/lib/pilens /var/lib/pilens-helper'
 run resources.txt sh -c 'df -h; free -m; uptime; vcgencmd get_throttled; vcgencmd measure_temp; timedatectl'
 cp /var/lib/pilens-helper/dnsmasq.conf "$D/dnsmasq.conf" 2>/dev/null

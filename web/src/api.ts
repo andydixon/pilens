@@ -56,7 +56,7 @@ let es: EventSource | null = null;
 export function connectEvents() {
   if (es) return;
   es = new EventSource("/api/events");
-  for (const t of ["hello", "packets", "capture", "resync", "ping"]) {
+  for (const t of ["hello", "packets", "capture", "resync", "ping", "http"]) {
     es.addEventListener(t, (e) => {
       let d: any = {};
       try { d = JSON.parse((e as MessageEvent).data); } catch { /* ignore */ }
@@ -98,3 +98,14 @@ export interface TLSRecord { num: number; seg: number; time: number; client: str
 export interface CertRecord { num: number; seg: number; time: number; server: string; subject: string; issuer: string; sans: string; not_before: string; not_after: string }
 
 export interface Finding { rule: string; title: string; severity: "info" | "low" | "medium"; count: number; flows: number; examples: number[]; filter: string; note: string }
+
+// ---- Phase 4 interception types ----
+export interface CAInfo { present: boolean; subject: string; sha256: string; not_before: string; not_after: string; serial: string; days_left: number; key_type: string }
+export interface InterceptionConfig { enabled: boolean; capture_bodies: boolean; max_body_kb: number; exclude_hosts: string[] }
+export interface InterceptionStatus { config: InterceptionConfig; ca: CAInfo; running: boolean; port: number; note: string }
+export interface HttpFlow {
+  id: string; ts: number; client: string; method: string; scheme: string; host: string; port: number; path: string;
+  http_version: string; status: number; reason: string; req_ctype: string; resp_ctype: string; req_size: number; resp_size: number;
+  duration_ms: number; tls_version: string; sni: string; alpn: string; intercepted: boolean; error: string; websocket: boolean;
+  has_req_body: boolean; has_resp_body: boolean; req_headers: Record<string,string>; resp_headers: Record<string,string>;
+}

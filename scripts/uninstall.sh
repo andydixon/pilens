@@ -15,7 +15,7 @@ if [ $PURGE = 1 ]; then
   [ "$x" = DELETE ] || { echo "not confirmed; keeping data"; PURGE=0; }
 fi
 
-systemctl disable --now pilens pilens-dnsmasq pilens-helper pilens-firewall 2>/dev/null || true
+systemctl disable --now pilens pilens-proxy pilens-dnsmasq pilens-helper pilens-firewall 2>/dev/null || true
 nmcli connection delete pilens-ap 2>/dev/null && echo "removed access-point profile (other Wi-Fi profiles were never modified and will reconnect)" || true
 rm -f /etc/NetworkManager/system-connections/pilens-ap.nmconnection
 nft delete table inet pilens 2>/dev/null && echo "removed firewall table inet pilens" || true

@@ -21,6 +21,7 @@ import (
 	"pilens.dev/pilens/internal/capture"
 	"pilens.dev/pilens/internal/config"
 	"pilens.dev/pilens/internal/helper"
+	"pilens.dev/pilens/internal/proxy"
 	"pilens.dev/pilens/internal/store"
 )
 
@@ -39,6 +40,7 @@ type Server struct {
 	Engine         *capture.Engine
 	Helper         helper.Client
 	Version        string
+	Proxy          *proxy.Manager
 	Web            fs.FS // built UI; may be nil in tests
 	SetupTokenPath string
 	DataDir        string
@@ -82,6 +84,7 @@ func (s *Server) Handler() http.Handler {
 	s.networkRoutes(priv)
 	s.captureRoutes(priv)
 	s.analysisRoutes(priv)
+	s.interceptionRoutes(priv)
 
 	if s.Web != nil {
 		files := http.FileServerFS(s.Web)

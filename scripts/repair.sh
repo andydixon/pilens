@@ -18,6 +18,18 @@ if ! getcap /usr/bin/dumpcap 2>/dev/null | grep -q cap_net_raw; then
 fi
 getcap /usr/bin/dumpcap | grep -q cap_net_raw && ok "dumpcap capture capabilities" || bad "dumpcap lacks capabilities"
 
+# Optional: rebuild the mitmproxy venv if it is missing (HTTPS interception).
+VENV=/opt/pilens/proxy-venv
+if [ ! -x "$VENV/bin/mitmdump" ]; then
+  if python3 -m venv "$VENV" >/dev/null 2>&1 && "$VENV/bin/pip" install --quiet --only-binary=:all: mitmproxy >/dev/null 2>&1; then
+    chown -R pilens:pilens "$VENV"; ok "mitmproxy venv rebuilt"
+  else
+    bad "mitmproxy venv missing and reinstall failed (interception unavailable; needs internet)"
+  fi
+else
+  ok "mitmproxy venv present"
+fi
+
 systemctl daemon-reload
 systemctl enable pilens-firewall pilens-helper pilens-dnsmasq pilens >/dev/null 2>&1
 systemctl reset-failed 'pilens*' 2>/dev/null

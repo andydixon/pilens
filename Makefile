@@ -19,7 +19,7 @@ build: web
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o dist/$(PKG)/bin/pilens-helper ./cmd/pilens-helper
 
 package: build
-	cp -r systemd packaging/setup.example.yaml dist/$(PKG)/
+	cp -r systemd packaging/setup.example.yaml packaging/mitm_addon.py dist/$(PKG)/
 	cp scripts/*.sh dist/$(PKG)/
 	cp -r docs README.md LICENSE dist/$(PKG)/
 	echo $(VERSION) > dist/$(PKG)/VERSION

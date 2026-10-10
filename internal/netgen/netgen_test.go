@@ -66,7 +66,7 @@ func TestDnsmasq(t *testing.T) {
 }
 
 func TestNftables(t *testing.T) {
-	s := Nftables(testNet())
+	s := Nftables(testNet(), nil)
 	for _, want := range []string{
 		"delete table inet pilens",
 		`iifname "wlan0" jump ap_forward`,
@@ -84,7 +84,24 @@ func TestNftables(t *testing.T) {
 	}
 	n := testNet()
 	n.Forwarding.Mode = "deny"
-	if !strings.Contains(Nftables(n), `"forwarding disabled"`) {
+	if !strings.Contains(Nftables(n, nil), `"forwarding disabled"`) {
 		t.Error("deny mode must drop forwarded traffic")
+	}
+}
+
+func TestNftablesInterception(t *testing.T) {
+	off := Nftables(testNet(), nil)
+	if strings.Contains(off, "redirect to") || strings.Contains(off, "ct status dnat") {
+		t.Fatal("interception rules present when disabled")
+	}
+	on := Nftables(testNet(), &Intercept{Enabled: true, Port: 8081})
+	for _, want := range []string{
+		"chain prerouting {",
+		`iifname "wlan0" meta l4proto tcp tcp dport { 80, 443 } redirect to :8081`,
+		"tcp dport 8081 ct status dnat accept",
+	} {
+		if !strings.Contains(on, want) {
+			t.Errorf("interception ruleset missing %q", want)
+		}
 	}
 }
